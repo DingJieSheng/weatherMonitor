@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -83,6 +85,8 @@ class MyFrame extends JFrame implements ActionListener{
 	private JMenu jm_tools = null;
 	private JMenuItem ji_hitory=null;
 	private JMenuItem ji_export=null;
+	private JMenuItem ji_cityList=null;
+	private JMenuItem ji_morecityList=null;
 	/*
 	 * 主窗口面板区
 	 */
@@ -123,6 +127,8 @@ class MyFrame extends JFrame implements ActionListener{
 	private String[] suggest_array=null;
 	private double[] pre_pm2_5_array=null;
 	private String[] preweather_array=null;
+	private ArrayList<String> city_list=null;
+	private ArrayList<String> belongcity_list=null;
 	/*
 	 * 各类操作按钮
 	 */
@@ -136,6 +142,8 @@ class MyFrame extends JFrame implements ActionListener{
 		bt_broadcast.addActionListener(this);
 		ji_export.addActionListener(this);
 		ji_hitory.addActionListener(this);
+		ji_cityList.addActionListener(this);
+		ji_morecityList.addActionListener(this);
 	}
 	/*
 	 *初始化函数 
@@ -169,9 +177,13 @@ class MyFrame extends JFrame implements ActionListener{
 		//初始化菜单栏
 		ji_export=new JMenuItem("导出数据");
 		ji_hitory=new JMenuItem("历史数据");
+		ji_cityList=new JMenuItem("更新城市列表");
+		ji_morecityList=new JMenuItem("更新详细城市列表");
 		jm_file=new JMenu("文件");
 		jm_file.add(ji_export);
 		jm_tools=new JMenu("工具");
+		jm_tools.add(ji_cityList);
+		jm_tools.add(ji_morecityList);
 		jm_edit=new JMenu("编辑");
 		jm_help=new JMenu("帮助");
 		jm_check=new JMenu("查看");
@@ -396,8 +408,83 @@ class MyFrame extends JFrame implements ActionListener{
 //			有待后期完善-------------------------------------------------------------------
 		}else if(source.equals("历史数据")){
 			checkHistoryData();
+		}else if(source.equals("更新城市列表")){
+			updatecitylist();
+		}else if(source.equals("更新详细城市列表")){
+			updatemorecitylist();
 		}
 	}
+	public void updatecitylist() {
+		UpdateDataUtil.updateCityList(false);
+		city_list=UpdateDataUtil.getCity_list();
+		PreparedStatement pre=null;
+		PreparedStatement pre1=null;
+		try {
+			pre1=(PreparedStatement) conn.prepareCall("truncate table citylist;");
+			pre=(PreparedStatement) conn.prepareStatement("insert into citylist(cityname) values (?);");
+			pre1.execute();
+		} catch (SQLException e1) {
+			// TODO 自动生成的 catch 块
+			e1.printStackTrace();
+		}
+		Iterator<String> it_city=city_list.iterator();
+//		    先清空城市列表后再更新
+		while (it_city.hasNext()) {
+			try {
+				pre.setString(1, it_city.next());
+				pre.execute();
+			} catch (SQLException e1) {
+				// TODO 自动生成的 catch 块
+				e1.printStackTrace();
+			}
+		}
+		try {
+			if(conn!=null&&!conn.isClosed()){
+				conn.close();
+			}
+		} catch (SQLException e1) {
+			// TODO 自动生成的 catch 块
+			e1.printStackTrace();
+		}
+	}
+
+	public void updatemorecitylist() {
+		UpdateDataUtil.updateCityList(true);
+		city_list=UpdateDataUtil.getCity_list();
+		belongcity_list=UpdateDataUtil.getBelongcity_list();
+		PreparedStatement pre=null;
+		PreparedStatement pre1=null;
+		try {
+			pre1=(PreparedStatement) conn.prepareCall("truncate table morecitylist;");
+			pre=(PreparedStatement) conn.prepareStatement("insert into morecitylist(cityname,belongcity) values (?,?);");
+			pre1.execute();
+		} catch (SQLException e1) {
+			// TODO 自动生成的 catch 块
+			e1.printStackTrace();
+		}
+		Iterator<String> it_city=city_list.iterator();
+		Iterator<String> it_morecity=belongcity_list.iterator();
+//		    先清空城市列表后再更新
+		while (it_city.hasNext()) {
+			try {
+				pre.setString(1, it_city.next());
+				pre.setString(2, it_morecity.next());
+				pre.execute();
+			} catch (SQLException e1) {
+				// TODO 自动生成的 catch 块
+				e1.printStackTrace();
+			}
+		}
+		try {
+			if(conn!=null&&!conn.isClosed()){
+				conn.close();
+			}
+		} catch (SQLException e1) {
+			// TODO 自动生成的 catch 块
+			e1.printStackTrace();
+		}
+	}
+	
 //	查看历史数据
 	private void checkHistoryData() {
 		// TODO 自动生成的方法存根

@@ -3,25 +3,16 @@
  */
 package mainSystem;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Connection;
-import java.util.ArrayList;
-
-import javax.swing.JDialog;
-
-import org.apache.commons.logging.Log;
 
 import net.sf.json.JSONArray;
-import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 /**
@@ -29,8 +20,10 @@ import net.sf.json.JSONObject;
  *
  */
 public class DataRequest {
-    private static JSONArray ja=null;
+
+	private static JSONArray ja=null;
     private static JSONObject jo=null;
+    private static JSONObject jo_cityList=null;
     private static JSONArray ja_cityWeather=null;
 	private static String url="http://www.pm25.in/api/querys/aqi_ranking.json?token=5j1znBVAsnSf5xQyNQyq";
 	/**
@@ -62,6 +55,18 @@ public class DataRequest {
 	 */
 	public static JSONArray getJa_cityWeather() {
 		return ja_cityWeather;
+	}
+    /**
+	 * @return jo_cityList
+	 */
+	public static JSONObject getJo_cityList() {
+		return jo_cityList;
+	}
+	/**
+	 * @param jo_cityList 要设置的 jo_cityList
+	 */
+	public static void setJo_cityList(JSONObject jo_cityList) {
+		DataRequest.jo_cityList = jo_cityList;
 	}
 	/**
 	 * @param ja_cityWeather 要设置的 ja_cityWeather
@@ -215,5 +220,26 @@ public class DataRequest {
 //			ja_cityWeather = JSONArray.fromObject(stb_weather.toString());
 //			
 //		}
+	}
+
+	public static void CityList() throws Exception{
+		URL cityListUrl=new URL("http://apicloud.mob.com/v1/weather/citys?key=1d42eae83af38");
+		HttpURLConnection connection=(HttpURLConnection) cityListUrl.openConnection();
+		connection.setReadTimeout(60*1000);//60秒超时
+		connection.setDoInput(true);// 读取数据
+		connection.setRequestMethod("GET");// 设置请求方式为GET方式
+		StringBuffer stb_citylist=new StringBuffer();
+		BufferedReader br=null;
+		char buff[]=new char[10240];
+		int count=0;
+		if(connection.getResponseCode()==200){
+			br=new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			while((count=br.read(buff))!=-1){
+				stb_citylist.append(buff,0,count);
+			}
+			br.close();
+			connection.disconnect();
+			jo_cityList=JSONObject.fromObject(stb_citylist.toString());
+		}
 	}
 }

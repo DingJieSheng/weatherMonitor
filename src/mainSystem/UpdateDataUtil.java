@@ -7,23 +7,22 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.awt.Window;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JDialog;
 import javax.swing.JTextArea;
 
-import com.mysql.jdbc.PreparedStatement;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+
+import com.mysql.jdbc.PreparedStatement;
 
 /**
  * @author ac 盛鼎杰，孟靖宇，方远
@@ -32,9 +31,11 @@ import net.sf.json.JSONObject;
 public class UpdateDataUtil {
 	private static JSONArray ja;
 	private static JSONObject jo_cityWeather;
-	private static JSONArray ja_cityWeather;
+	private static JSONObject jo_cityList;
 	private static String[] suggest_array;
 	private static double[] pre_pm2_5_array;
+	private static ArrayList<String> city_list;
+	private static ArrayList<String> belongcity_list;
 	private static String[] city_array;
 	private static int[] aqi_array;
 	private static double[] co_array;
@@ -297,6 +298,48 @@ public class UpdateDataUtil {
 //			}
 //		}
 	}
+//	更新城市列表
+	/**
+	 * @param more false代表更新到地级市城市列表，true代表更详细的县级市
+	 */
+    public static void updateCityList(boolean morecity){
+    	try {
+			DataRequest.CityList();
+		} catch (Exception e) {
+			// TODO 自动生成的 catch 块
+			errorDialog(e);
+			e.printStackTrace();
+		}
+    	jo_cityList=DataRequest.getJo_cityList();
+    	if(jo_cityList.getString("msg").equals("success")){
+    		ja=jo_cityList.getJSONArray("result");
+    		city_list=new ArrayList<String>(); 
+    		belongcity_list=new ArrayList<String>();
+    		for(int i=0;i<ja.size();i++){
+    			JSONObject jocity=ja.getJSONObject(i);
+    			JSONArray jacity=jocity.getJSONArray("city");
+    			for(int j=0;j<jacity.size();j++){
+    				JSONObject jo1=jacity.getJSONObject(j);
+    				JSONArray ja1=null;
+    				city_list.add(jo1.getString("city"));
+    				belongcity_list.add(jo1.getString("city"));
+					if (morecity) {//详细城市列表
+						try {
+							ja1 = jo1.getJSONArray("district");
+							for (int k = 1; k < ja1.size(); k++) {
+								city_list.add(ja1.getJSONObject(k).getString(
+										"district"));
+								belongcity_list.add(jo1.getString("city"));
+							}
+						} catch (Exception e) {
+							// TODO 自动生成的 catch 块
+							e.printStackTrace();
+						}
+					}
+    			}
+    		}
+    	}
+    }
 	/**
 	 * @return city_array
 	 */
@@ -585,4 +628,29 @@ public class UpdateDataUtil {
 	public static void setPre_pm2_5_array(double[] pre_pm2_5_array) {
 		UpdateDataUtil.pre_pm2_5_array = pre_pm2_5_array;
 	}
+	/**
+	 * @return city_list
+	 */
+	public static ArrayList<String> getCity_list() {
+		return city_list;
+	}
+	/**
+	 * @param city_list 要设置的 city_list
+	 */
+	public static void setCity_list(ArrayList<String> city_list) {
+		UpdateDataUtil.city_list = city_list;
+	}
+	/**
+	 * @return belongcity_list
+	 */
+	public static ArrayList<String> getBelongcity_list() {
+		return belongcity_list;
+	}
+	/**
+	 * @param belongcity_list 要设置的 belongcity_list
+	 */
+	public static void setBelongcity_list(ArrayList<String> belongcity_list) {
+		UpdateDataUtil.belongcity_list = belongcity_list;
+	}
+	
 }
