@@ -51,7 +51,7 @@ public class UIsystem {
 	public static void main(String[] args) {
 		// TODO 自动生成的方法存根
         @SuppressWarnings("unused")
-		MyFrame myFrame=new MyFrame("实时PM2.5监控系统",new ImageIcon("image1.jpg").getImage());
+		MyFrame myFrame=new MyFrame("实时PM2.5监控系统",new ImageIcon("weatherIcon.png").getImage());
 	}
 
 }
@@ -66,10 +66,15 @@ class MyFrame extends JFrame implements ActionListener{
 		init();
 		registerListener();
 	}
+	private static boolean flag_firstload=true;
 	/*
 	 * 图标
 	 */
 	private Image iconImage=null;
+	/*
+	 * 加载提示框
+	 */
+	private JDialog loadingdialog=null;
 	/*
 	 * 请求访问的数据库链接
 	 */
@@ -115,7 +120,7 @@ class MyFrame extends JFrame implements ActionListener{
 	private JTextField []jt_time=null;
 	private JTextField []jt_preWeather=null;
 	private JTextField []jt_prePm=null;
-	private JTextField []jt_suggest=null;
+	private JTextArea []jt_suggest=null;
 	/*
 	 * 各类属性值数组
 	 */
@@ -247,11 +252,31 @@ class MyFrame extends JFrame implements ActionListener{
 		Dimension screensize = kit.getScreenSize();
 		int screenwidth = screensize.width;
 		int screenhight = screensize.height;
-		int windowswidth = errorjt.getWidth();
-		int windowshight = errorjt.getHeight();
+		int windowswidth = errordialog.getWidth();
+		int windowshight = errordialog.getHeight();
 		errordialog.setLocation((screenwidth - windowswidth) / 2,
 				(screenhight - windowshight) / 2);
 		errordialog.setVisible(true);
+	}
+	
+	public void setloadingDialog(){
+		loadingdialog=new JDialog(MyFrame.this, "提示");
+		Container errorcon=loadingdialog.getContentPane();
+		JTextArea errorjt=new JTextArea("正在加载数据中，请稍候......");
+		errorjt.setEditable(false);
+		errorjt.setLineWrap(true);
+		errorjt.setWrapStyleWord(true);
+		errorcon.add(errorjt, BorderLayout.CENTER);
+		loadingdialog.setSize(300, 200);
+		Toolkit kit = Toolkit.getDefaultToolkit();
+		Dimension screensize = kit.getScreenSize();
+		int screenwidth = screensize.width;
+		int screenhight = screensize.height;
+		int windowswidth = loadingdialog.getWidth();
+		int windowshight = loadingdialog.getHeight();
+		loadingdialog.setLocation((screenwidth - windowswidth) / 2,
+				(screenhight - windowshight) / 2);
+		loadingdialog.setVisible(true);
 	}
 	/**
 	 * @throws IOException 
@@ -260,8 +285,14 @@ class MyFrame extends JFrame implements ActionListener{
 	 * @param internet判断是否从互联网获取数据，是的话更新数据库，否则不更新，表示从数据库取历史数据
 	 */
 	public void updateData() throws SQLException, ParseException, IOException {
+		conn=DatabaseUtil.getConn();
+		setloadingDialog();
+		if(flag_firstload){
+			updatecitylist();//先更新城市列表，之后根据此列表请求天气以及空气质量数据,初次加载时执行
+			flag_firstload=false;
+		}
 		boolean internet=false;
-		internet=UpdateDataUtil.updateDataUtil();//通过返回值来判断数据来源是否是网络
+		internet=UpdateDataUtil.updateDataUtil(false);//通过返回值来判断数据来源是否是网络
 		city_array=UpdateDataUtil.getCity_array();
 		aqi_array=UpdateDataUtil.getAqi_array();
 		time_point_array=UpdateDataUtil.getTime_point_array();
@@ -278,24 +309,24 @@ class MyFrame extends JFrame implements ActionListener{
 		jt_pm = new JTextField[city_array.length];
 		jt_prePm = new JTextField[city_array.length];
 		jt_preWeather = new JTextField[city_array.length];
-		jt_suggest = new JTextField[city_array.length];
+		jt_suggest = new JTextArea[city_array.length];
 		jt_time = new JTextField[city_array.length];
 		jt_weather = new JTextField[city_array.length];
 //		获取当前数据的时间戳
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+//		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Timestamp tmsp=null;
 		if(internet){
-			tmsp=Timestamp.valueOf(df1.format(df.parse(time_point_array[0])));
+			tmsp=Timestamp.valueOf(time_point_array[17]);
 		}else{
-			tmsp=Timestamp.valueOf(time_point_array[0]);
+			tmsp=Timestamp.valueOf(time_point_array[17]);
 		}
 		for (int i = 0; i < city_array.length; i++) {
 			jt_aqi[i] = new JTextField("AQI值");
 			jt_pm[i] = new JTextField("PM2.5");
 			jt_prePm[i] = new JTextField("PM2.5预测值");
 			jt_preWeather[i] = new JTextField("天气预测值");
-			jt_suggest[i] = new JTextField("出行建议");
+			jt_suggest[i] = new JTextArea("出行建议");
 			jt_time[i] = new JTextField("时间戳");
 			jt_weather[i] = new JTextField("当前天气");
 		}
@@ -313,49 +344,52 @@ class MyFrame extends JFrame implements ActionListener{
 			}//如果时间戳表中已存在此记录，无需重复写入
 			if(internet){
 				PreparedStatement preparedStatement2=(PreparedStatement) conn.prepareStatement("insert into tmstamp(time_stamp)values(?)");
-				preparedStatement2.setTimestamp(1, Timestamp.valueOf(df1.format(df.parse(time_point_array[0]))));
+				preparedStatement2.setTimestamp(1, Timestamp.valueOf(time_point_array[17]));
 				preparedStatement2.execute();
 			}
 			for (int i = 0; i < city_array.length; i++) {
-				jl_cityList[i] = new JLabel(city_array[i]);
-				jt_time[i].setText(time_point_array[i]);
-				jt_time[i].setEditable(false);
-				jt_weather[i].setText(weather_array[i]);
-				jt_weather[i].setEditable(false);
-				jt_pm[i].setText(pm2_5_array[i]+"");
-				jt_pm[i].setEditable(false);
-				jt_aqi[i].setText(aqi_array[i]+"");
-				jt_aqi[i].setEditable(false);
-				jt_preWeather[i].setText(preweather_array[i]);
-				jt_preWeather[i].setEditable(false);
-				jt_prePm[i].setText(pre_pm2_5_array[i]+"");
-				jt_prePm[i].setEditable(false);
-				jt_suggest[i].setText(suggest_array[i]);
-				jt_suggest[i].setEditable(false);
-				jp_citiesData.add(jl_cityList[i]);
-				jp_citiesData.add(jt_time[i]);
-				jp_citiesData.add(jt_weather[i]);
-				jp_citiesData.add(jt_pm[i]);
-				jp_citiesData.add(jt_aqi[i]);
-				jp_citiesData.add(jt_preWeather[i]);
-				jp_citiesData.add(jt_prePm[i]);
-				jp_citiesData.add(jt_suggest[i]);
-				if(internet){//如果数据来源于网络则需要写入数据库
-//					向数据库写入数据操作
-					PreparedStatement preparedStatement = (PreparedStatement) conn
-							.prepareStatement("insert into weather (address, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest) values(?,?,?,?,?,?,?,?)");
-					preparedStatement.setString(1, city_array[i]);
-					df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-					df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-					preparedStatement.setTimestamp(2, Timestamp.valueOf(df1.format(df.parse(time_point_array[i]))));
-					preparedStatement.setDouble(3,aqi_array[i]);
-					preparedStatement.setDouble(4,pm2_5_array[i]);
-					preparedStatement.setDouble(5,0);//此处应该是pre_pm2_5_array[i]，预测模块实现后修改
-					preparedStatement.setString(6,weather_array[i]);
-					preparedStatement.setString(7,preweather_array[i]);
-					preparedStatement.setString(8,null);//此处应该是suggest_array[i]，项目完善后修改
-					if(conn!=null&&!conn.isClosed()){
-						preparedStatement.execute();
+				if (city_array[i]!=null) {
+					jl_cityList[i] = new JLabel(city_array[i]);
+					jt_time[i].setText(time_point_array[17]);
+					jt_time[i].setEditable(false);
+					jt_weather[i].setText(weather_array[i]);
+					jt_weather[i].setEditable(false);
+					jt_pm[i].setText(pm2_5_array[i] + "");
+					jt_pm[i].setEditable(false);
+					jt_aqi[i].setText(aqi_array[i] + "");
+					jt_aqi[i].setEditable(false);
+					jt_preWeather[i].setText(preweather_array[i]);
+					jt_preWeather[i].setEditable(false);
+					jt_prePm[i].setText(pre_pm2_5_array[i] + "");
+					jt_prePm[i].setEditable(false);
+					jt_suggest[i].setText(suggest_array[i]);
+					jt_suggest[i].setEditable(false);
+					jp_citiesData.add(jl_cityList[i]);
+					jp_citiesData.add(jt_time[i]);
+					jp_citiesData.add(jt_weather[i]);
+					jp_citiesData.add(jt_pm[i]);
+					jp_citiesData.add(jt_aqi[i]);
+					jp_citiesData.add(jt_preWeather[i]);
+					jp_citiesData.add(jt_prePm[i]);
+					jp_citiesData.add(jt_suggest[i]);
+					if (internet) {//如果数据来源于网络则需要写入数据库
+					//					向数据库写入数据操作
+						PreparedStatement preparedStatement = (PreparedStatement) conn
+								.prepareStatement("insert into weather (address, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest) values(?,?,?,?,?,?,?,?)");
+						preparedStatement.setString(1, city_array[i]);
+						//					df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+						df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						preparedStatement.setTimestamp(2,
+								Timestamp.valueOf(time_point_array[17]));//北京市
+						preparedStatement.setDouble(3, aqi_array[i]);
+						preparedStatement.setDouble(4, pm2_5_array[i]);
+						preparedStatement.setDouble(5, 0);//此处应该是pre_pm2_5_array[i]，预测模块实现后修改
+						preparedStatement.setString(6, weather_array[i]);
+						preparedStatement.setString(7, preweather_array[i]);
+						preparedStatement.setString(8, null);//此处应该是suggest_array[i]，项目完善后修改
+						if (conn != null && !conn.isClosed()) {
+							preparedStatement.execute();
+						}
 					}
 				}
 			}
@@ -363,6 +397,7 @@ class MyFrame extends JFrame implements ActionListener{
 				conn.close();
 			}
 		}
+		loadingdialog.dispose();
 	}
 	/**
 	 * @param container
@@ -409,9 +444,13 @@ class MyFrame extends JFrame implements ActionListener{
 		}else if(source.equals("历史数据")){
 			checkHistoryData();
 		}else if(source.equals("更新城市列表")){
+			setloadingDialog();
 			updatecitylist();
+			loadingdialog.dispose();;
 		}else if(source.equals("更新详细城市列表")){
+			setloadingDialog();
 			updatemorecitylist();
+			loadingdialog.dispose();
 		}
 	}
 	public void updatecitylist() {
@@ -420,7 +459,7 @@ class MyFrame extends JFrame implements ActionListener{
 		PreparedStatement pre=null;
 		PreparedStatement pre1=null;
 		try {
-			pre1=(PreparedStatement) conn.prepareCall("truncate table citylist;");
+			pre1=(PreparedStatement) conn.prepareStatement("truncate table citylist;");
 			pre=(PreparedStatement) conn.prepareStatement("insert into citylist(cityname) values (?);");
 			pre1.execute();
 		} catch (SQLException e1) {

@@ -63,11 +63,11 @@ public class UpdateDataUtil {
 	private static Connection conn=null;
 //	该变量主要用于文件名，避免文件名重复
 	private static long currenttime=0;
-	public static boolean updateDataUtil() throws IOException{
+	public static boolean updateDataUtil(boolean morecity) throws IOException{
 		try {
 			flag_internet=true;
 			currenttime=System.currentTimeMillis();
-			DataRequest.cityListRequest(flag_internet,currenttime);
+			DataRequest.airqualityRequest(flag_internet,currenttime,morecity);
 		} catch (Exception e) {
 			errorDialog(e);
 			// TODO 自动生成的 catch 块
@@ -81,44 +81,44 @@ public class UpdateDataUtil {
 			}
 			e.printStackTrace();
 		}
-		if(flag_internet){//flag_internet如果通过网络访问实时数据则，天气数据也应访问网络获取实时数据，反之从本地提取历史数据
-			ja=DataRequest.getJa();
-			map_data=new HashMap<>();
-			weather_array = new String[ja.size()];
-			preWeather_array = new String[ja.size()];
-			FileOutputStream fo_citylist=null;
-			try {
-				fo_citylist = new FileOutputStream(new File("historyData/cityWeather"+currenttime+".txt"),true);//以jsonarray的形式保存文件。一遍当做历史数据读出。
-				fo_citylist.write("[".getBytes(), 0, "[".getBytes().length);
-			} catch (Exception e1) {
-				// TODO 自动生成的 catch 块
-				e1.printStackTrace();
-			}
-			for(int i=0;i<ja.size();i++){
-				JSONObject jo=ja.getJSONObject(i);
-				map_data.put(jo.getString("area"), jo);
-				try {
-					DataRequest.cityWeatherRequest(jo.getString("area"), true,currenttime);
-					updateWeatherData(i);
-				} catch (Exception e) {
-					// TODO 自动生成的 catch 块
-					e.printStackTrace();
-				}
-				fo_citylist.write(",".getBytes(), 0, ",".getBytes().length);
-			}
-			try {
-				fo_citylist.write("]".getBytes(), 0, "]".getBytes().length);
-			} catch (IOException e) {
-				// TODO 自动生成的 catch 块
-				e.printStackTrace();
-			}finally{
-				try {
-					fo_citylist.close();
-				} catch (IOException e) {
-					// TODO 自动生成的 catch 块
-					e.printStackTrace();
-				}
-			}
+//		if(flag_internet){//flag_internet如果通过网络访问实时数据则，天气数据也应访问网络获取实时数据，反之从本地提取历史数据
+//			ja=DataRequest.getJa();
+//			map_data=new HashMap<>();
+//			weather_array = new String[ja.size()];
+//			preWeather_array = new String[ja.size()];
+//			FileOutputStream fo_citylist=null;
+//			try {
+//				fo_citylist = new FileOutputStream(new File("historyData/cityWeather"+currenttime+".txt"),true);//以jsonarray的形式保存文件。一遍当做历史数据读出。
+//				fo_citylist.write("[".getBytes(), 0, "[".getBytes().length);
+//			} catch (Exception e1) {
+//				// TODO 自动生成的 catch 块
+//				e1.printStackTrace();
+//			}
+//			for(int i=0;i<ja.size();i++){
+//				JSONObject jo=ja.getJSONObject(i);
+//				map_data.put(jo.getString("area"), jo);
+//				try {
+//					DataRequest.cityWeatherRequest(jo.getString("area"), true,currenttime);
+//					updateWeatherData(i);
+//				} catch (Exception e) {
+//					// TODO 自动生成的 catch 块
+//					e.printStackTrace();
+//				}
+//				fo_citylist.write(",".getBytes(), 0, ",".getBytes().length);
+//			}
+//			try {
+//				fo_citylist.write("]".getBytes(), 0, "]".getBytes().length);
+//			} catch (IOException e) {
+//				// TODO 自动生成的 catch 块
+//				e.printStackTrace();
+//			}finally{
+//				try {
+//					fo_citylist.close();
+//				} catch (IOException e) {
+//					// TODO 自动生成的 catch 块
+//					e.printStackTrace();
+//				}
+//			}
 //		else{
 //			try {
 //				DataRequest.cityWeatherRequest(null, flag_internet);
@@ -130,56 +130,86 @@ public class UpdateDataUtil {
 //				updateWeatherData(i);
 //			}
 //		}
-			city_array = new String[ja.size()];
-			aqi_array = new int[ja.size()];
-			co_array = new double[ja.size()];
-			co_24h_array = new double[ja.size()];
-			no2_array = new double[ja.size()];
-			no2_24h_array = new double[ja.size()];
-			o3_array = new double[ja.size()];
-			o3_24h_array = new double[ja.size()];
-			o3_8h_array = new double[ja.size()];
-			o3_8h_24h_array = new double[ja.size()];
-			pm10_array = new double[ja.size()];
-			pm10_24h_array = new double[ja.size()];
-			pm2_5_array = new double[ja.size()];
-			pm2_5_24h_array = new double[ja.size()];
-			quality_array = new String[ja.size()];
-			level_array = new String[ja.size()];
-			so2_array = new double[ja.size()];
-			so2_24h_array = new double[ja.size()];
-			primary_pollutant_array = new String[ja.size()];
-			time_point_array = new String[ja.size()];
-			pre_pm2_5_array=new double[ja.size()];
-			suggest_array=new String[ja.size()];
-
-			for (int i = 0; i < ja.size(); i++) {
-				JSONObject jo = ja.getJSONObject(i);
-				aqi_array[i] = jo.getInt("aqi");
-				city_array[i] = jo.getString("area");
-				co_array[i] = jo.getDouble("co");
-				co_24h_array[i] = jo.getDouble("co_24h");
-				no2_array[i] = jo.getDouble("no2");
-				no2_24h_array[i] = jo.getDouble("no2_24h");
-				o3_array[i] = jo.getDouble("o3");
-				o3_24h_array[i] = jo.getDouble("o3_24h");
-				o3_8h_array[i] = jo.getDouble("o3_8h");
-				o3_8h_24h_array[i] = jo.getDouble("o3_8h_24h");
-				pm10_array[i] = jo.getDouble("pm10");
-				pm10_24h_array[i] = jo.getDouble("pm10_24h");
-				pm2_5_array[i] = jo.getDouble("pm2_5");
-				pm2_5_24h_array[i] = jo.getDouble("pm2_5_24h");
-				quality_array[i] = jo.getString("quality");
-				level_array[i] = jo.getString("level");
-				so2_array[i] = jo.getDouble("so2");
-				so2_24h_array[i] = jo.getDouble("so2_24h");
-				primary_pollutant_array[i] = jo.getString("primary_pollutant");
-				pre_pm2_5_array[i]=0;//网络获取数据时先设置pm2.5预测值为0
-				suggest_array[i]="有待数据分析！";
-				time_point_array[i] = jo.getString("time_point");
-			}
-		}
+//		}
 		return flag_internet;
+	}
+	/**
+	 * @param morecity
+	 */
+	public static void initArray(boolean morecity) {
+		int size=0;//城市数量
+		if(morecity){
+			size=belongcity_list.size();
+		}else{
+			size=city_list.size();
+		}
+		city_array = new String[size];
+		aqi_array = new int[size];
+		co_array = new double[size];
+		co_24h_array = new double[size];
+		no2_array = new double[size];
+		no2_24h_array = new double[size];
+		o3_array = new double[size];
+		o3_24h_array = new double[size];
+		o3_8h_array = new double[size];
+		o3_8h_24h_array = new double[size];
+		pm10_array = new double[size];
+		pm10_24h_array = new double[size];
+		pm2_5_array = new double[size];
+		pm2_5_24h_array = new double[size];
+		quality_array = new String[size];
+		level_array = new String[size];
+		so2_array = new double[size];
+		so2_24h_array = new double[size];
+		primary_pollutant_array = new String[size];
+		time_point_array = new String[size];
+		pre_pm2_5_array=new double[size];
+		suggest_array=new String[size];
+		weather_array = new String[size];
+		preWeather_array = new String[size];
+	}
+	/**
+	 * 生成各类数据的数组
+	 */
+	@SuppressWarnings("finally")
+	public static boolean makeArray(JSONObject jo_airquality,boolean morecity,int index) {
+		if (jo_airquality.getString("msg").equals("success")) {
+			try {
+				JSONObject jo=jo_airquality.getJSONArray("result").getJSONObject(0);
+				aqi_array[index] = jo.getInt("aqi");
+				city_array[index] = jo.getString("district");
+				pre_pm2_5_array[index] = 0;// 网络获取数据时先设置pm2.5预测值为0
+				suggest_array[index] = "有待数据分析！";
+				time_point_array[index] = jo.getString("updateTime");
+				quality_array[index] = jo.getString("quality");
+//			co_array[index] = jo.getDouble("co");
+//			co_24h_array[index] = jo.getDouble("co_24h");
+				no2_array[index] = jo.getInt("no2");
+//			no2_24h_array[index] = jo.getDouble("no2_24h");
+//			o3_array[index] = jo.getDouble("o3");
+//			o3_24h_array[index] = jo.getDouble("o3_24h");
+//			o3_8h_array[index] = jo.getDouble("o3_8h");
+//			o3_8h_24h_array[index] = jo.getDouble("o3_8h_24h");
+//			pm10_array[index] = jo.getDouble("pm10");
+//			pm10_24h_array[index] = jo.getDouble("pm10_24h");
+				pm2_5_array[index] = jo.getInt("pm25");
+//			pm2_5_24h_array[index] = jo.getDouble("pm2_5_24h");
+//			level_array[index] = jo.getString("level");
+				so2_array[index] = jo.getInt("so2");
+//			so2_24h_array[index] = jo.getDouble("so2_24h");
+//			primary_pollutant_array[index] = jo.getString("primary_pollutant");
+			} catch (Exception e) {
+				// TODO 自动生成的 catch 块
+				no2_array[index]=-1;
+				pm2_5_array[index]=-1;
+				so2_array[index]=-1;
+				e.printStackTrace();
+			}finally{
+				return true;
+			}
+		}else{
+			return false;
+		}
 	}
 //	访问历史数据
 	private static void requestHistoryData() {
@@ -248,17 +278,13 @@ public class UpdateDataUtil {
 	/**
 	 * @param index
 	 */
-	public static void updateWeatherData(int index) {
+	public static void updateWeatherData(JSONObject jo_weather,int index) {
 		if(flag_internet){//具体运行时此处为flag_internet
-			jo_cityWeather=DataRequest.getJo();
-			if(jo_cityWeather.getJSONArray("HeWeather5").getJSONObject(0).getString("status").equals("ok")&&!jo_cityWeather.getJSONArray("HeWeather5")
-					.getJSONObject(0).getJSONObject("now").isEmpty()&&!jo_cityWeather.getJSONArray("HeWeather5")
-					.getJSONObject(0).getJSONArray("hourly_forecast").isEmpty()){//判断状态码是否正常（正常则为有数据，否则无数据），同时判断所需数据是否为空
+			if(jo_weather.getString("msg").equals("success")){//判断状态码是否正常（正常则为有数据，否则无数据），同时判断所需数据是否为空
 //				获取当前城市的实时天气情况
 			try {
-				weather_array[index] = jo_cityWeather.getJSONArray("HeWeather5")
-						.getJSONObject(0).getJSONObject("now")
-						.getJSONObject("cond").getString("txt");
+				weather_array[index] = jo_weather.getJSONArray("result")
+						.getJSONObject(0).getString("weather");
 			} catch (Exception e) {
 				// TODO 自动生成的 catch 块
 				weather_array[index]="数据获取失败！";
@@ -266,17 +292,21 @@ public class UpdateDataUtil {
 			}
 //				获取当前城市一小时候的天气预测值
 			try {
-				preWeather_array[index] = jo_cityWeather.getJSONArray("HeWeather5")
-						.getJSONObject(0).getJSONArray("hourly_forecast")
-						.getJSONObject(0).getJSONObject("cond").getString("txt");
+				preWeather_array[index] = jo_weather.getJSONArray("result")
+						.getJSONObject(0).getJSONArray("future").getJSONObject(0).getString("dayTime");
 			} catch (Exception e) {
 				// TODO 自动生成的 catch 块
 				preWeather_array[index]="数据获取失败！";
 				e.printStackTrace();
 			}
+			suggest_array[index] ="着装建议："+jo_weather.getJSONArray("result")
+					.getJSONObject(0).getString("dressingIndex")+"\n运动建议："+jo_weather.getJSONArray("result")
+					.getJSONObject(0).getString("exerciseIndex")+"\n洗刷建议："+jo_weather.getJSONArray("result")
+					.getJSONObject(0).getString("washIndex");
 			}else{
 				weather_array[index]="未查询到数据！";
 				preWeather_array[index]="未查询到数据！";
+				suggest_array[index]="有待数据分析";
 			}
 		}//如果不是访问网络则从数据库取数据该else语句不需要
 //		else{
