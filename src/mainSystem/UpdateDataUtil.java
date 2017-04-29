@@ -236,7 +236,7 @@ public class UpdateDataUtil {
 			preWeather_array=new String[size];
 		    while(resultSet.next()){
 		    	aqi_array[count]=resultSet.getInt(resultSet.findColumn("aqi"));
-				city_array[count] = resultSet.getString(resultSet.findColumn("address"));
+				city_array[count] = resultSet.getString(resultSet.findColumn("cityname"));
 				pm2_5_array[count]=resultSet.getDouble(resultSet.findColumn("pm2_5"));
 				time_point_array[count]=resultSet.getString(resultSet.findColumn("time_stamp"));
 				suggest_array[count]=resultSet.getString(resultSet.findColumn("suggest"));

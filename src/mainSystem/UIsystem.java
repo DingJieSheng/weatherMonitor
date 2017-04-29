@@ -7,9 +7,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,16 +28,19 @@ import java.util.Iterator;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.text.Position;
 
 import com.mysql.jdbc.PreparedStatement;
 
@@ -73,8 +78,20 @@ class MyFrame extends JFrame implements ActionListener{
 	private Image iconImage=null;
 	/*
 	 * 加载提示框
+	 * 数据标签选择框
 	 */
 	private JDialog loadingdialog=null;
+	private JDialog jd_choose=null;
+	/*
+	 * 数据标签
+	 */
+	private String[] city_label=null;
+	private Timestamp[] tsp_label=null;
+	/*
+	 * 数据标签下拉列表
+	 */
+	private JComboBox<String> jc_cityname=null;
+	private JComboBox<Timestamp> jc_tsp=null;
 	/*
 	 * 请求访问的数据库链接
 	 */
@@ -303,6 +320,15 @@ class MyFrame extends JFrame implements ActionListener{
 		weather_array=UpdateDataUtil.getWeather_array();
 		preweather_array=UpdateDataUtil.getPreWeather_array();
 		suggest_array=UpdateDataUtil.getSuggest_array();
+//		获取当前数据的时间戳
+//		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Timestamp tmsp=null;
+		if(internet){
+			tmsp=Timestamp.valueOf(time_point_array[17]);
+		}else{
+			tmsp=Timestamp.valueOf(time_point_array[17]);
+		}
 		jp_citiesData.removeAll();
 		GridLayout gl=new GridLayout(0,8,1,15);
 		jp_citiesData.setLayout(gl);
@@ -314,15 +340,6 @@ class MyFrame extends JFrame implements ActionListener{
 		jt_suggest = new JTextArea[city_array.length];
 		jt_time = new JTextField[city_array.length];
 		jt_weather = new JTextField[city_array.length];
-//		获取当前数据的时间戳
-//		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		Timestamp tmsp=null;
-		if(internet){
-			tmsp=Timestamp.valueOf(time_point_array[17]);
-		}else{
-			tmsp=Timestamp.valueOf(time_point_array[17]);
-		}
 		for (int i = 0; i < city_array.length; i++) {
 			jt_aqi[i] = new JTextField("AQI值");
 			jt_pm[i] = new JTextField("PM2.5");
@@ -377,7 +394,7 @@ class MyFrame extends JFrame implements ActionListener{
 					if (internet) {//如果数据来源于网络则需要写入数据库
 					//					向数据库写入数据操作
 						PreparedStatement preparedStatement = (PreparedStatement) conn
-								.prepareStatement("insert into weather (address, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest) values(?,?,?,?,?,?,?,?)");
+								.prepareStatement("insert into weather (cityname, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest) values(?,?,?,?,?,?,?,?)");
 						preparedStatement.setString(1, city_array[i]);
 						//					df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 						df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -413,7 +430,7 @@ class MyFrame extends JFrame implements ActionListener{
 		container.add(js_mainpane);
 		container.add(jp_buttonArea, BorderLayout.SOUTH);
 		container.add(jp_weatherItem, BorderLayout.NORTH);
-		this.setSize(1000, 600);
+		this.setSize(1100, 600);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		Toolkit kit = Toolkit.getDefaultToolkit();
 		Dimension screensize = kit.getScreenSize();
@@ -432,6 +449,7 @@ class MyFrame extends JFrame implements ActionListener{
 		if(source.equals("更新数据")){
 			try {
 				updateData();
+				onDraw(MyFrame.this.getContentPane());//刷新显示,如果不调用此函数无法更新显示
 			} catch (Exception e1) {
 				// TODO 自动生成的 catch 块
 				errorDialog(e1);
@@ -444,7 +462,7 @@ class MyFrame extends JFrame implements ActionListener{
 		}else if(source.equals("导出数据")){
 //			有待后期完善-------------------------------------------------------------------
 		}else if(source.equals("历史数据")){
-			checkHistoryData();
+			historyDataSelect();
 		}else if(source.equals("更新城市列表")){
 			setloadingDialog();
 			updatecitylist();
@@ -455,6 +473,103 @@ class MyFrame extends JFrame implements ActionListener{
 			loadingdialog.setVisible(false);;
 		}
 	}
+	class HistoryLabel{
+		public String cityname;
+		public Timestamp tsp;
+		/**
+		 * @return cityname
+		 */
+		public String getCityname() {
+			return cityname;
+		}
+		/**
+		 * @param cityname 要设置的 cityname
+		 */
+		public void setCityname(String cityname) {
+			this.cityname = cityname;
+		}
+		/**
+		 * @return tsp
+		 */
+		public Timestamp getTsp() {
+			return tsp;
+		}
+		/**
+		 * @param tsp 要设置的 tsp
+		 */
+		public void setTsp(Timestamp tsp) {
+			this.tsp = tsp;
+		}
+	    
+	}
+	private void historyDataSelect() {
+		// TODO 自动生成的方法存根
+		jd_choose=new JDialog(MyFrame.this, "历史数据标签选择框");
+		jd_choose.setIconImage(iconImage);
+		try {
+			conn=DatabaseUtil.getConn();
+			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select cityname from citylist;");
+			PreparedStatement pre1=(PreparedStatement) conn.prepareStatement("select time_stamp from tmstamp;");
+			ResultSet rs=pre.executeQuery();
+			ResultSet rs1=pre1.executeQuery();
+			rs.last(); 
+			rs1.last();
+			int size= rs.getRow(); 
+			int size1=rs1.getRow();
+			rs.beforeFirst();
+			rs1.beforeFirst();
+			int count=1;
+			int count1=1;
+			city_label=new String[size+1];
+			tsp_label=new Timestamp[size1+1];
+			city_label[0]=null;//第一个值设为null，表示查询全部数据
+			tsp_label[0]=null;
+			while(rs.next()){
+				city_label[count] = rs.getString(rs.findColumn("cityname"));
+				count++;
+			}
+			while(rs1.next()){
+				tsp_label[count1] = rs1.getTimestamp(rs1.findColumn("time_stamp"));
+				count1++;
+			}
+			jc_cityname=new JComboBox<>(city_label);
+			jc_tsp=new JComboBox<>(tsp_label);
+			FlowLayout fl=new FlowLayout(FlowLayout.CENTER);
+			jd_choose.setLayout(fl);
+		    jd_choose.add(new JLabel("城市名："));
+		    jd_choose.add(jc_cityname);
+		    jd_choose.add(new JLabel("时间戳："));
+		    jd_choose.add(jc_tsp);
+		    JButton bt_yes=new JButton("确定");
+		    bt_yes.addActionListener(new myListener());
+		    JButton bt_no=new JButton("取消");
+		    bt_no.addActionListener(new myListener());
+		    jd_choose.add(bt_yes);
+		    jd_choose.add(bt_no);
+		    jd_choose.setSize(400, 100);
+		    Point po=jd_choose.getParent().getLocationOnScreen();
+		    jd_choose.setLocation(po.x+350, po.y+250);
+		    jd_choose.setResizable(false);
+		    jd_choose.setVisible(true);
+		} catch (SQLException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}
+	}
+//	数据标签按钮监听类
+	class myListener implements ActionListener{
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// TODO 自动生成的方法存根
+			if(e.getActionCommand().equals("确定")){
+				checkHistoryData((String)jc_cityname.getSelectedItem(),(Timestamp)jc_tsp.getSelectedItem());
+			}
+			jd_choose.setVisible(false);
+		}
+		
+	}
+//	更新城市列表
 	public void updatecitylist() {
 		boolean flag_success=true;
 		try {
@@ -506,6 +621,7 @@ class MyFrame extends JFrame implements ActionListener{
 		}
 	}
 
+//	更新详细的城市列表
 	public void updatemorecitylist() {
 		boolean flag_success=true;
 		try {
@@ -554,10 +670,139 @@ class MyFrame extends JFrame implements ActionListener{
 		}
 	}
 	
-//	查看历史数据
-	private void checkHistoryData() {
+//	查看历史数据（根据地点，时间来选择，二者都确定或者只有其一都可）
+	private void checkHistoryData(String cityname,Timestamp timestamp) {
 		// TODO 自动生成的方法存根
 		
+		if(cityname!=null&&timestamp!=null){
+			try {
+				conn=DatabaseUtil.getConn();
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select * from weather where cityname= ? and time_stamp= ?;");
+				pre.setString(1, cityname);
+				pre.setTimestamp(2, timestamp);
+				reloadUI(pre);
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}else if(cityname!=null){
+			try {
+				conn=DatabaseUtil.getConn();
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select * from weather where cityname= ?;");
+				pre.setString(1, cityname);
+				reloadUI(pre);
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}else if(timestamp!=null){
+			try {
+				conn=DatabaseUtil.getConn();
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select * from weather where time_stamp= ?;");
+				pre.setTimestamp(1, timestamp);
+				reloadUI(pre);
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}else{
+			try {
+				conn=DatabaseUtil.getConn();
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select * from weather;");
+				reloadUI(pre);
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}
+		if(conn!=null){
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}
+	}
+/**
+ * @param pre要执行的查询语句
+ * @throws SQLException
+ */
+    public void reloadUI(PreparedStatement pre) throws SQLException {
+		ResultSet rs = pre.executeQuery();
+		rs.last();
+		int size = rs.getRow();
+		rs.beforeFirst();
+		int count = 0;
+		int[] aqi_array = new int[size];
+		String[] city_array = new String[size];
+		double[] pm2_5_array = new double[size];
+		double[] pm2_5_24h_array = new double[size];
+		String[] time_point_array = new String[size];
+		String[] suggest_array = new String[size];
+		double[] pre_pm2_5_array = new double[size];
+		String[] weather_array = new String[size];
+		String[] preWeather_array = new String[size];
+		while (rs.next()) {
+			aqi_array[count] = rs.getInt(rs.findColumn("aqi"));
+			city_array[count] = rs.getString(rs.findColumn("cityname"));
+			pm2_5_array[count] = rs.getDouble(rs.findColumn("pm2_5"));
+			time_point_array[count] = rs.getString(rs.findColumn("time_stamp"));
+			suggest_array[count] = rs.getString(rs.findColumn("suggest"));
+			pre_pm2_5_array[count] = rs.getDouble(rs.findColumn("prepm2_5"));
+			weather_array[count] = rs.getString(rs.findColumn("weather_now"));
+			preWeather_array[count] = rs.getString(rs
+					.findColumn("weather_forecast"));
+			count++;
+		}
+		jp_citiesData.removeAll();
+		GridLayout gl = new GridLayout(0, 8, 1, 15);
+		jp_citiesData.setLayout(gl);
+		// 初始化属性值显示框
+		jt_aqi = new JTextField[city_array.length];
+		jt_pm = new JTextField[city_array.length];
+		jt_prePm = new JTextField[city_array.length];
+		jt_preWeather = new JTextField[city_array.length];
+		jt_suggest = new JTextArea[city_array.length];
+		jt_time = new JTextField[city_array.length];
+		jt_weather = new JTextField[city_array.length];
+		for (int i = 0; i < city_array.length; i++) {
+			jt_aqi[i] = new JTextField("AQI值");
+			jt_pm[i] = new JTextField("PM2.5");
+			jt_prePm[i] = new JTextField("PM2.5预测值");
+			jt_preWeather[i] = new JTextField("天气预测值");
+			jt_suggest[i] = new JTextArea("出行建议");
+			jt_time[i] = new JTextField("时间戳");
+			jt_weather[i] = new JTextField("当前天气");
+		}
+		for (int i = 0; i < city_array.length; i++) {
+			if (city_array[i] != null) {
+				jl_cityList[i] = new JLabel(city_array[i]);
+				jt_time[i].setText(time_point_array[i]);
+				jt_time[i].setEditable(false);
+				jt_weather[i].setText(weather_array[i]);
+				jt_weather[i].setEditable(false);
+				jt_pm[i].setText(pm2_5_array[i] + "");
+				jt_pm[i].setEditable(false);
+				jt_aqi[i].setText(aqi_array[i] + "");
+				jt_aqi[i].setEditable(false);
+				jt_preWeather[i].setText(preweather_array[i]);
+				jt_preWeather[i].setEditable(false);
+				jt_prePm[i].setText(pre_pm2_5_array[i] + "");
+				jt_prePm[i].setEditable(false);
+				jt_suggest[i].setText(suggest_array[i]);
+				jt_suggest[i].setEditable(false);
+				jp_citiesData.add(jl_cityList[i]);
+				jp_citiesData.add(jt_time[i]);
+				jp_citiesData.add(jt_weather[i]);
+				jp_citiesData.add(jt_pm[i]);
+				jp_citiesData.add(jt_aqi[i]);
+				jp_citiesData.add(jt_preWeather[i]);
+				jp_citiesData.add(jt_prePm[i]);
+				jp_citiesData.add(jt_suggest[i]);
+			}
+		}
+		onDraw(MyFrame.this.getContentPane());
 	}
 }
 

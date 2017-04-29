@@ -96,6 +96,8 @@ public class DataRequest {
 		if(flag_internet){
 			if (city_list!=null&&!city_list.isEmpty()) {
 				Iterator<String> it_city=city_list.iterator();
+				fw_citylist = new FileWriter(new File(
+						"historyData/cityList" + currenttime + ".txt"),true);
 				while (it_city.hasNext()) {
 					try {
 						String cityname=it_city.next();
@@ -112,8 +114,6 @@ public class DataRequest {
 							br_citylist = new BufferedReader(
 									new InputStreamReader(
 											connection.getInputStream()));
-							fw_citylist = new FileWriter(new File(
-									"historyData/cityList" + currenttime + ".txt"),true);
 						} else {
 							// 后续可以继续完善请求失败的处理
 							throw new Exception("网络请求失败！请求错误码："
