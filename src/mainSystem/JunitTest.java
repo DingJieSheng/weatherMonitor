@@ -2,7 +2,11 @@ package mainSystem;
 
 import static org.junit.Assert.*;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -24,6 +28,7 @@ public class JunitTest {
 			String city="北京";
 			String urlencode=URLEncoder.encode(city,"utf-8");
 			String url="http://apicloud.mob.com/environment/query?key=1d42eae83af38&city="+urlencode;
+//			String url2="https://github.com/";
 			URL url1=new URL(url);
 			HttpURLConnection connection=(HttpURLConnection) url1.openConnection();
 			connection.setReadTimeout(1000 * 60);// 设置超时时间为60秒
@@ -40,6 +45,7 @@ public class JunitTest {
 
 			}
 			char[] buff = new char[1024];
+//			byte[] buff=new byte[10240];
 			stb = new StringBuilder();
 			while ((count = br_citylist.read(buff)) != -1) {
 				decode = new String(buff, 0, count);
@@ -47,6 +53,40 @@ public class JunitTest {
 			}
 			br_citylist.close();
 			System.out.println(stb.toString());
+			connection.disconnect();
+		} catch (Exception e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void test1() {
+		BufferedInputStream bi_citylist=null;
+		BufferedOutputStream bo=null;
+		int count=0;
+		try {
+			String url2="https://github.com/";
+			URL url1=new URL(url2);
+			HttpURLConnection connection=(HttpURLConnection) url1.openConnection();
+			connection.setReadTimeout(1000 * 60);// 设置超时时间为60秒
+			connection.setDoInput(true);// 读取数据
+			connection.setRequestMethod("GET");// 设置请求方式为GET方式
+			if (connection.getResponseCode() == 200) {// 请求码200表示请求成功
+				bi_citylist =new BufferedInputStream(connection.getInputStream());
+				bo=new BufferedOutputStream(new FileOutputStream(new File("C:\\Users\\ac\\Desktop\\github.html")));
+			} else {
+				// 后续可以继续完善请求失败的处理
+				throw new Exception("网络请求失败！请求错误码："
+						+ connection.getResponseCode());
+
+			}
+			byte[] buff=new byte[10240];
+			while ((count = bi_citylist.read(buff)) != -1) {
+				bo.write(buff, 0, count);
+			}
+			bo.close();
+			bi_citylist.close();
 			connection.disconnect();
 		} catch (Exception e) {
 			// TODO 自动生成的 catch 块

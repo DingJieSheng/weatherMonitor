@@ -34,8 +34,8 @@ public class UpdateDataUtil {
 	private static JSONObject jo_cityList;
 	private static String[] suggest_array;
 	private static double[] pre_pm2_5_array;
-	private static ArrayList<String> city_list;
-	private static ArrayList<String> belongcity_list;
+	private static ArrayList<String> city_list=new ArrayList<String>();
+	private static ArrayList<String> belongcity_list=new ArrayList<String>();
 	private static String[] city_array;
 	private static int[] aqi_array;
 	private static double[] co_array;
@@ -331,44 +331,66 @@ public class UpdateDataUtil {
 //	更新城市列表
 	/**
 	 * @param more false代表更新到地级市城市列表，true代表更详细的县级市
+	 * @throws Exception 
 	 */
-    public static void updateCityList(boolean morecity){
+    public static void updateCityList(boolean morecity) throws Exception{
+    	boolean flag_success=true;
     	try {
 			DataRequest.CityList();
 		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
+			flag_success=false;
 			errorDialog(e);
 			e.printStackTrace();
+			throw e;
 		}
-    	jo_cityList=DataRequest.getJo_cityList();
-    	if(jo_cityList.getString("msg").equals("success")){
-    		ja=jo_cityList.getJSONArray("result");
-    		city_list=new ArrayList<String>(); 
-    		belongcity_list=new ArrayList<String>();
-    		for(int i=0;i<ja.size();i++){
-    			JSONObject jocity=ja.getJSONObject(i);
-    			JSONArray jacity=jocity.getJSONArray("city");
-    			for(int j=0;j<jacity.size();j++){
-    				JSONObject jo1=jacity.getJSONObject(j);
-    				JSONArray ja1=null;
-    				city_list.add(jo1.getString("city"));
-    				belongcity_list.add(jo1.getString("city"));
-					if (morecity) {//详细城市列表
-						try {
-							ja1 = jo1.getJSONArray("district");
-							for (int k = 1; k < ja1.size(); k++) {
-								city_list.add(ja1.getJSONObject(k).getString(
-										"district"));
-								belongcity_list.add(jo1.getString("city"));
+    	if (flag_success) {
+			jo_cityList = DataRequest.getJo_cityList();
+			if (jo_cityList.getString("msg").equals("success")) {
+				ja = jo_cityList.getJSONArray("result");
+				for (int i = 0; i < ja.size(); i++) {
+					JSONObject jocity = ja.getJSONObject(i);
+					JSONArray jacity = jocity.getJSONArray("city");
+					for (int j = 0; j < jacity.size(); j++) {
+						JSONObject jo1 = jacity.getJSONObject(j);
+						JSONArray ja1 = null;
+						city_list.add(jo1.getString("city"));
+						belongcity_list.add(jo1.getString("city"));
+						if (morecity) {//详细城市列表
+							try {
+								ja1 = jo1.getJSONArray("district");
+								for (int k = 1; k < ja1.size(); k++) {
+									city_list.add(ja1.getJSONObject(k)
+											.getString("district"));
+									belongcity_list.add(jo1.getString("city"));
+								}
+							} catch (Exception e) {
+								// TODO 自动生成的 catch 块
+								e.printStackTrace();
 							}
-						} catch (Exception e) {
-							// TODO 自动生成的 catch 块
-							e.printStackTrace();
 						}
 					}
-    			}
-    		}
+				}
+			}
     	}
+    }
+    public static void historyCitylist(boolean morecity)throws Exception{
+		conn = DatabaseUtil.getConn();
+		PreparedStatement pre = null;
+		if (!morecity) {
+			pre = (PreparedStatement) conn
+					.prepareStatement("select cityname from citylist;");
+		} else {
+			pre = (PreparedStatement) conn
+					.prepareStatement("select cityname,belongcity from morecitylist;");
+		}
+		ResultSet rs = pre.executeQuery();
+		while (rs.next()) {
+			city_list.add(rs.getString(rs.findColumn("cityname")));
+			if (morecity) {
+				belongcity_list.add(rs.getString(rs.findColumn("belongcity")));
+			}
+		}
     }
 	/**
 	 * @return city_array

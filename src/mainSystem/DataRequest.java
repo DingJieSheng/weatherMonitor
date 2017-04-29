@@ -96,8 +96,6 @@ public class DataRequest {
 		if(flag_internet){
 			if (city_list!=null&&!city_list.isEmpty()) {
 				Iterator<String> it_city=city_list.iterator();
-				fw_citylist = new FileWriter(new File(
-						"historyData/cityList" + currenttime + ".txt"),true);
 				while (it_city.hasNext()) {
 					try {
 						String cityname=it_city.next();
@@ -114,11 +112,12 @@ public class DataRequest {
 							br_citylist = new BufferedReader(
 									new InputStreamReader(
 											connection.getInputStream()));
+							fw_citylist = new FileWriter(new File(
+									"historyData/cityList" + currenttime + ".txt"),true);
 						} else {
 							// 后续可以继续完善请求失败的处理
 							throw new Exception("网络请求失败！请求错误码："
 									+ connection.getResponseCode());
-
 						}
 						char[] buff = new char[1024];
 						stb = new StringBuilder();
@@ -138,11 +137,16 @@ public class DataRequest {
 					} catch (Exception e) {
 						// TODO 自动生成的 catch 块
 						e.printStackTrace();
+						throw e;
 					}
 				}
-				fw_citylist.close();
-				br_citylist.close();
+				if (fw_citylist!=null&&br_citylist!=null) {
+					fw_citylist.close();
+					br_citylist.close();
+				}
 				connection.disconnect();
+			}else{
+			throw new Exception("网络获取失败！");
 			}
 		}
 //		else{
@@ -255,6 +259,8 @@ public class DataRequest {
 			br.close();
 			connection.disconnect();
 			jo_cityList=JSONObject.fromObject(stb_citylist.toString());
+		}else{
+			throw new Exception("网络访问失败！");
 		}
 	}
 }

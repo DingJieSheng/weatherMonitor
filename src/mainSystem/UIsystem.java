@@ -62,7 +62,7 @@ class MyFrame extends JFrame implements ActionListener{
 	 */
 	public MyFrame(String title,Image image) throws HeadlessException {
 		super(title);
-//		this.iconImage=image;可能图片大小不合适有待改正
+		this.iconImage=image;//可能图片大小不合适有待改正
 		init();
 		registerListener();
 	}
@@ -260,22 +260,24 @@ class MyFrame extends JFrame implements ActionListener{
 	}
 	
 	public void setloadingDialog(){
-		loadingdialog=new JDialog(MyFrame.this, "提示");
-		Container errorcon=loadingdialog.getContentPane();
-		JTextArea errorjt=new JTextArea("正在加载数据中，请稍候......");
-		errorjt.setEditable(false);
-		errorjt.setLineWrap(true);
-		errorjt.setWrapStyleWord(true);
-		errorcon.add(errorjt, BorderLayout.CENTER);
-		loadingdialog.setSize(300, 200);
-		Toolkit kit = Toolkit.getDefaultToolkit();
-		Dimension screensize = kit.getScreenSize();
-		int screenwidth = screensize.width;
-		int screenhight = screensize.height;
-		int windowswidth = loadingdialog.getWidth();
-		int windowshight = loadingdialog.getHeight();
-		loadingdialog.setLocation((screenwidth - windowswidth) / 2,
-				(screenhight - windowshight) / 2);
+		if (loadingdialog==null) {
+			loadingdialog = new JDialog(MyFrame.this, "提示");
+			Container errorcon = loadingdialog.getContentPane();
+			JTextArea errorjt = new JTextArea("正在加载数据中，请稍候......");
+			errorjt.setEditable(false);
+			errorjt.setLineWrap(true);
+			errorjt.setWrapStyleWord(true);
+			errorcon.add(errorjt, BorderLayout.CENTER);
+			loadingdialog.setSize(300, 200);
+			Toolkit kit = Toolkit.getDefaultToolkit();
+			Dimension screensize = kit.getScreenSize();
+			int screenwidth = screensize.width;
+			int screenhight = screensize.height;
+			int windowswidth = loadingdialog.getWidth();
+			int windowshight = loadingdialog.getHeight();
+			loadingdialog.setLocation((screenwidth - windowswidth) / 2,
+					(screenhight - windowshight) / 2);
+		}
 		loadingdialog.setVisible(true);
 	}
 	/**
@@ -386,7 +388,7 @@ class MyFrame extends JFrame implements ActionListener{
 						preparedStatement.setDouble(5, 0);//此处应该是pre_pm2_5_array[i]，预测模块实现后修改
 						preparedStatement.setString(6, weather_array[i]);
 						preparedStatement.setString(7, preweather_array[i]);
-						preparedStatement.setString(8, null);//此处应该是suggest_array[i]，项目完善后修改
+						preparedStatement.setString(8, suggest_array[i]);//此处应该是suggest_array[i]，项目完善后修改
 						if (conn != null && !conn.isClosed()) {
 							preparedStatement.execute();
 						}
@@ -397,7 +399,7 @@ class MyFrame extends JFrame implements ActionListener{
 				conn.close();
 			}
 		}
-		loadingdialog.dispose();
+		loadingdialog.setVisible(false);;
 	}
 	/**
 	 * @param container
@@ -446,81 +448,109 @@ class MyFrame extends JFrame implements ActionListener{
 		}else if(source.equals("更新城市列表")){
 			setloadingDialog();
 			updatecitylist();
-			loadingdialog.dispose();;
+			loadingdialog.setVisible(false);;
 		}else if(source.equals("更新详细城市列表")){
 			setloadingDialog();
 			updatemorecitylist();
-			loadingdialog.dispose();
+			loadingdialog.setVisible(false);;
 		}
 	}
 	public void updatecitylist() {
-		UpdateDataUtil.updateCityList(false);
-		city_list=UpdateDataUtil.getCity_list();
-		PreparedStatement pre=null;
-		PreparedStatement pre1=null;
+		boolean flag_success=true;
 		try {
-			pre1=(PreparedStatement) conn.prepareStatement("truncate table citylist;");
-			pre=(PreparedStatement) conn.prepareStatement("insert into citylist(cityname) values (?);");
-			pre1.execute();
-		} catch (SQLException e1) {
+			UpdateDataUtil.updateCityList(false);
+		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
-			e1.printStackTrace();
-		}
-		Iterator<String> it_city=city_list.iterator();
-//		    先清空城市列表后再更新
-		while (it_city.hasNext()) {
+			flag_success=false;
 			try {
-				pre.setString(1, it_city.next());
-				pre.execute();
+				UpdateDataUtil.historyCitylist(false);
+			} catch (Exception e1) {
+				// TODO 自动生成的 catch 块
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+		}//false代表只更新大城市列表，true代表更新所有城市列表
+		city_list = UpdateDataUtil.getCity_list();
+		if (flag_success) {
+			PreparedStatement pre = null;
+			PreparedStatement pre1 = null;
+			try {
+				pre1 = (PreparedStatement) conn
+						.prepareStatement("truncate table citylist;");
+				pre = (PreparedStatement) conn
+						.prepareStatement("insert into citylist(cityname) values (?);");
+				pre1.execute();
 			} catch (SQLException e1) {
 				// TODO 自动生成的 catch 块
 				e1.printStackTrace();
 			}
-		}
-		try {
-			if(conn!=null&&!conn.isClosed()){
-				conn.close();
+			Iterator<String> it_city = city_list.iterator();
+			//		    先清空城市列表后再更新
+			while (it_city.hasNext()) {
+				try {
+					pre.setString(1, it_city.next());
+					pre.execute();
+				} catch (SQLException e1) {
+					// TODO 自动生成的 catch 块
+					e1.printStackTrace();
+				}
 			}
-		} catch (SQLException e1) {
-			// TODO 自动生成的 catch 块
-			e1.printStackTrace();
+			try {
+				if (conn != null && !conn.isClosed()) {
+					conn.close();
+				}
+			} catch (SQLException e1) {
+				// TODO 自动生成的 catch 块
+				e1.printStackTrace();
+			}
 		}
 	}
 
 	public void updatemorecitylist() {
-		UpdateDataUtil.updateCityList(true);
-		city_list=UpdateDataUtil.getCity_list();
-		belongcity_list=UpdateDataUtil.getBelongcity_list();
-		PreparedStatement pre=null;
-		PreparedStatement pre1=null;
+		boolean flag_success=true;
 		try {
-			pre1=(PreparedStatement) conn.prepareCall("truncate table morecitylist;");
-			pre=(PreparedStatement) conn.prepareStatement("insert into morecitylist(cityname,belongcity) values (?,?);");
-			pre1.execute();
-		} catch (SQLException e1) {
+			UpdateDataUtil.updateCityList(true);
+		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
-			e1.printStackTrace();
+			flag_success=false;
+			e.printStackTrace();
 		}
-		Iterator<String> it_city=city_list.iterator();
-		Iterator<String> it_morecity=belongcity_list.iterator();
-//		    先清空城市列表后再更新
-		while (it_city.hasNext()) {
+		if (flag_success) {
+			city_list = UpdateDataUtil.getCity_list();
+			belongcity_list = UpdateDataUtil.getBelongcity_list();
+			PreparedStatement pre = null;
+			PreparedStatement pre1 = null;
 			try {
-				pre.setString(1, it_city.next());
-				pre.setString(2, it_morecity.next());
-				pre.execute();
+				pre1 = (PreparedStatement) conn
+						.prepareCall("truncate table morecitylist;");
+				pre = (PreparedStatement) conn
+						.prepareStatement("insert into morecitylist(cityname,belongcity) values (?,?);");
+				pre1.execute();
 			} catch (SQLException e1) {
 				// TODO 自动生成的 catch 块
 				e1.printStackTrace();
 			}
-		}
-		try {
-			if(conn!=null&&!conn.isClosed()){
-				conn.close();
+			Iterator<String> it_city = city_list.iterator();
+			Iterator<String> it_belongcity = belongcity_list.iterator();
+			//		    先清空城市列表后再更新
+			while (it_city.hasNext()) {
+				try {
+					pre.setString(1, it_city.next());
+					pre.setString(2, it_belongcity.next());
+					pre.execute();
+				} catch (SQLException e1) {
+					// TODO 自动生成的 catch 块
+					e1.printStackTrace();
+				}
 			}
-		} catch (SQLException e1) {
-			// TODO 自动生成的 catch 块
-			e1.printStackTrace();
+			try {
+				if (conn != null && !conn.isClosed()) {
+					conn.close();
+				}
+			} catch (SQLException e1) {
+				// TODO 自动生成的 catch 块
+				e1.printStackTrace();
+			}
 		}
 	}
 	

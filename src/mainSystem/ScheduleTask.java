@@ -36,7 +36,7 @@ public class ScheduleTask {
 			}
 		};
 		ScheduledExecutorService update_Service=Executors.newSingleThreadScheduledExecutor();
-		update_Service.scheduleAtFixedRate(up_Runnable, 0, 60, TimeUnit.MINUTES);//设定的时间间隔为60分钟
+		update_Service.scheduleAtFixedRate(up_Runnable, 0, 30, TimeUnit.MINUTES);//设定的时间间隔为3岁0分钟
 	}
 
 }
