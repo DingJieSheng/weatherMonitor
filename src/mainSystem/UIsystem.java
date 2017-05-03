@@ -109,6 +109,7 @@ class MyFrame extends JFrame implements ActionListener{
 	private JMenuItem ji_export=null;
 	private JMenuItem ji_cityList=null;
 	private JMenuItem ji_morecityList=null;
+	private JMenuItem ji_machinelearning=null;
 	/*
 	 * 主窗口面板区
 	 */
@@ -149,6 +150,10 @@ class MyFrame extends JFrame implements ActionListener{
 	private String[] suggest_array=null;
 	private double[] pre_pm2_5_array=null;
 	private String[] preweather_array=null;
+	private int[] temperature_array=null;
+	private int[] wind_array=null;
+	private int[] humidity_array=null;
+	private int[] weatherNum_array=null;
 	private ArrayList<String> city_list=null;
 	private ArrayList<String> belongcity_list=null;
 	/*
@@ -166,6 +171,7 @@ class MyFrame extends JFrame implements ActionListener{
 		ji_hitory.addActionListener(this);
 		ji_cityList.addActionListener(this);
 		ji_morecityList.addActionListener(this);
+		ji_machinelearning.addActionListener(this);
 	}
 	/*
 	 *初始化函数 
@@ -201,11 +207,13 @@ class MyFrame extends JFrame implements ActionListener{
 		ji_hitory=new JMenuItem("历史数据");
 		ji_cityList=new JMenuItem("更新城市列表");
 		ji_morecityList=new JMenuItem("更新详细城市列表");
+		ji_machinelearning=new JMenuItem("训练学习数据集");
 		jm_file=new JMenu("文件");
 		jm_file.add(ji_export);
 		jm_tools=new JMenu("工具");
 		jm_tools.add(ji_cityList);
 		jm_tools.add(ji_morecityList);
+		jm_tools.add(ji_machinelearning);
 		jm_edit=new JMenu("编辑");
 		jm_help=new JMenu("帮助");
 		jm_check=new JMenu("查看");
@@ -320,6 +328,10 @@ class MyFrame extends JFrame implements ActionListener{
 		weather_array=UpdateDataUtil.getWeather_array();
 		preweather_array=UpdateDataUtil.getPreWeather_array();
 		suggest_array=UpdateDataUtil.getSuggest_array();
+		temperature_array=UpdateDataUtil.getTemperature_array();
+		humidity_array=UpdateDataUtil.getHumidity_array();
+		wind_array=UpdateDataUtil.getWind_array();
+		weatherNum_array=UpdateDataUtil.getWeatherNum_array();
 //		获取当前数据的时间戳
 //		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -394,7 +406,7 @@ class MyFrame extends JFrame implements ActionListener{
 					if (internet) {//如果数据来源于网络则需要写入数据库
 					//					向数据库写入数据操作
 						PreparedStatement preparedStatement = (PreparedStatement) conn
-								.prepareStatement("insert into weather (cityname, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest) values(?,?,?,?,?,?,?,?)");
+								.prepareStatement("insert into weather (cityname, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest,temperature,humidity,wind,weatherNum) values(?,?,?,?,?,?,?,?,?,?,?,?)");
 						preparedStatement.setString(1, city_array[i]);
 						//					df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 						df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -406,6 +418,10 @@ class MyFrame extends JFrame implements ActionListener{
 						preparedStatement.setString(6, weather_array[i]);
 						preparedStatement.setString(7, preweather_array[i]);
 						preparedStatement.setString(8, suggest_array[i]);//此处应该是suggest_array[i]，项目完善后修改
+						preparedStatement.setInt(9, temperature_array[i]);
+						preparedStatement.setInt(10, humidity_array[i]);
+						preparedStatement.setInt(11, wind_array[i]);
+						preparedStatement.setInt(12, weatherNum_array[i]);
 						if (conn != null && !conn.isClosed()) {
 							preparedStatement.execute();
 						}
@@ -471,6 +487,22 @@ class MyFrame extends JFrame implements ActionListener{
 			setloadingDialog();
 			updatemorecitylist();
 			loadingdialog.setVisible(false);;
+		}else if(source.equals("训练学习数据集")){
+			machineLearning();
+		}
+	}
+	private void machineLearning() {
+		// TODO 自动生成的方法存根
+		try {
+			conn=DatabaseUtil.getConn();
+			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select temperature,humidity,wind,weatherNum from weather;");
+			ResultSet rs=pre.executeQuery();
+			ResultSet rs_copy=rs;
+			int[][] learningdata=new int[4][4];
+//			while(rs.)
+		} catch (SQLException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
 		}
 	}
 	class HistoryLabel{

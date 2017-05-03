@@ -1,24 +1,16 @@
 package mainSystem;
 
-import static org.junit.Assert.*;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.sql.Connection;
-import java.sql.Timestamp;
-
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -98,5 +90,15 @@ public class JunitTest {
 			// TODO 自动生成的 catch 块
 			e.printStackTrace();
 		}
+	}
+	
+	@Test
+	public void test2(){
+		String tm="14摄氏度";
+		String regEx="[^0-9]";
+		Pattern p = Pattern.compile(regEx);
+		Matcher m = p.matcher(tm);
+		System.out.println( m.replaceAll("").trim());
+
 	}
 }

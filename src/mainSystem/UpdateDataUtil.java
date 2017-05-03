@@ -15,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JDialog;
 import javax.swing.JTextArea;
@@ -38,6 +40,10 @@ public class UpdateDataUtil {
 	private static ArrayList<String> belongcity_list=new ArrayList<String>();
 	private static String[] city_array;
 	private static int[] aqi_array;
+	private static int[] temperature_array;
+	private static int[] wind_array;
+	private static int[] humidity_array;
+	private static int[] weatherNum_array;
 	private static double[] co_array;
 	private static double[] co_24h_array;
 	private static double[] no2_array;
@@ -167,6 +173,10 @@ public class UpdateDataUtil {
 		suggest_array=new String[size];
 		weather_array = new String[size];
 		preWeather_array = new String[size];
+		temperature_array =new int[size];
+		wind_array =new int[size];
+		weatherNum_array =new int[size];
+		humidity_array =new int[size];
 	}
 	/**
 	 * 生成各类数据的数组
@@ -279,35 +289,83 @@ public class UpdateDataUtil {
 	 * @param index
 	 */
 	public static void updateWeatherData(JSONObject jo_weather,int index) {
+		String regEx="[^0-9]";
+		Pattern p = Pattern.compile(regEx);
+		Matcher m =null;
+		int weatherNum=0;
 		if(flag_internet){//具体运行时此处为flag_internet
 			if(jo_weather.getString("msg").equals("success")){//判断状态码是否正常（正常则为有数据，否则无数据），同时判断所需数据是否为空
 //				获取当前城市的实时天气情况
-			try {
-				weather_array[index] = jo_weather.getJSONArray("result")
-						.getJSONObject(0).getString("weather");
-			} catch (Exception e) {
-				// TODO 自动生成的 catch 块
-				weather_array[index]="数据获取失败！";
-				e.printStackTrace();
-			}
-//				获取当前城市一小时候的天气预测值
-			try {
-				preWeather_array[index] = jo_weather.getJSONArray("result")
-						.getJSONObject(0).getJSONArray("future").getJSONObject(0).getString("dayTime");
-			} catch (Exception e) {
-				// TODO 自动生成的 catch 块
-				preWeather_array[index]="数据获取失败！";
-				e.printStackTrace();
-			}
-			suggest_array[index] ="着装建议："+jo_weather.getJSONArray("result")
-					.getJSONObject(0).getString("dressingIndex")+"\n运动建议："+jo_weather.getJSONArray("result")
-					.getJSONObject(0).getString("exerciseIndex")+"\n洗刷建议："+jo_weather.getJSONArray("result")
-					.getJSONObject(0).getString("washIndex");
+				try {
+					weather_array[index] = jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("weather");
+					String weathercase = jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("weather");
+					if (weathercase.matches(".*云")) {
+						weatherNum = 0;
+					} else if (weathercase.matches(".*雨")) {
+						weatherNum = 1;
+					} else if (weathercase.matches(".*雪")) {
+						weatherNum = 2;
+					} else if (weathercase.matches("晴")) {
+						weatherNum = 3;
+					} else if (weathercase.matches("阴")) {
+						weatherNum = 4;
+					} else if (weathercase.matches("霾")) {
+						weatherNum = 5;
+					} else {
+						weatherNum = -1;
+					}
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("temperature"));
+					temperature_array[index] = Integer.parseInt(m
+							.replaceAll("").trim());
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("humidity"));
+					humidity_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("wind"));
+					wind_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+				} catch (Exception e) {
+					// TODO 自动生成的 catch 块
+					weather_array[index] = "数据获取失败！";
+					weatherNum = -1;
+					temperature_array[index] = -1;
+					humidity_array[index] = -1;
+					wind_array[index] = -1;
+					e.printStackTrace();
+				}
+				// 获取当前城市一小时候的天气预测值
+				try {
+					preWeather_array[index] = jo_weather.getJSONArray("result")
+							.getJSONObject(0).getJSONArray("future")
+							.getJSONObject(0).getString("dayTime");
+				} catch (Exception e) {
+					// TODO 自动生成的 catch 块
+					preWeather_array[index] = "数据获取失败！";
+					e.printStackTrace();
+				}
+				suggest_array[index] = "着装建议："
+						+ jo_weather.getJSONArray("result").getJSONObject(0)
+								.getString("dressingIndex")
+						+ "\n运动建议："
+						+ jo_weather.getJSONArray("result").getJSONObject(0)
+								.getString("exerciseIndex")
+						+ "\n洗刷建议："
+						+ jo_weather.getJSONArray("result").getJSONObject(0)
+								.getString("washIndex");
 			}else{
 				weather_array[index]="未查询到数据！";
 				preWeather_array[index]="未查询到数据！";
 				suggest_array[index]="有待数据分析";
+				weatherNum=-1;
+				temperature_array[index] = -1;
+				humidity_array[index] = -1;
+				wind_array[index] = -1;
 			}
+			weatherNum_array[index]=weatherNum;
 		}//如果不是访问网络则从数据库取数据该else语句不需要
 //		else{
 //			ja_cityWeather=DataRequest.getJa_cityWeather();
@@ -703,6 +761,54 @@ public class UpdateDataUtil {
 	 */
 	public static void setBelongcity_list(ArrayList<String> belongcity_list) {
 		UpdateDataUtil.belongcity_list = belongcity_list;
+	}
+	/**
+	 * @return temperature_array
+	 */
+	public static int[] getTemperature_array() {
+		return temperature_array;
+	}
+	/**
+	 * @param temperature_array 要设置的 temperature_array
+	 */
+	public static void setTemperature_array(int[] temperature_array) {
+		UpdateDataUtil.temperature_array = temperature_array;
+	}
+	/**
+	 * @return wind_array
+	 */
+	public static int[] getWind_array() {
+		return wind_array;
+	}
+	/**
+	 * @param wind_array 要设置的 wind_array
+	 */
+	public static void setWind_array(int[] wind_array) {
+		UpdateDataUtil.wind_array = wind_array;
+	}
+	/**
+	 * @return humidity_array
+	 */
+	public static int[] getHumidity_array() {
+		return humidity_array;
+	}
+	/**
+	 * @param humidity_array 要设置的 humidity_array
+	 */
+	public static void setHumidity_array(int[] humidity_array) {
+		UpdateDataUtil.humidity_array = humidity_array;
+	}
+	/**
+	 * @return weatherNum_array
+	 */
+	public static int[] getWeatherNum_array() {
+		return weatherNum_array;
+	}
+	/**
+	 * @param weatherNum_array 要设置的 weatherNum_array
+	 */
+	public static void setWeatherNum_array(int[] weatherNum_array) {
+		UpdateDataUtil.weatherNum_array = weatherNum_array;
 	}
 	
 }
