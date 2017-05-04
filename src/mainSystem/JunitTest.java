@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -13,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
-
+import org.python.util.PythonInterpreter;
 public class JunitTest {
 
 	@Test
@@ -94,11 +95,13 @@ public class JunitTest {
 	
 	@Test
 	public void test2(){
-		String tm="14摄氏度";
-		String regEx="[^0-9]";
-		Pattern p = Pattern.compile(regEx);
-		Matcher m = p.matcher(tm);
-		System.out.println( m.replaceAll("").trim());
-
+		Process proc;
+		try {
+			proc = Runtime.getRuntime().exec("cmd.exe /c start python F:\\eclipse工作文件\\mlWeather\\pm25predict\\__init__.py");
+			proc.waitFor();
+		} catch (Exception e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}  
 	}
 }

@@ -301,11 +301,11 @@ public class UpdateDataUtil {
 							.getJSONObject(0).getString("weather");
 					String weathercase = jo_weather.getJSONArray("result")
 							.getJSONObject(0).getString("weather");
-					if (weathercase.matches(".*ÔÆ")) {
+					if (weathercase.matches(".*Óê")) {
 						weatherNum = 0;
-					} else if (weathercase.matches(".*Óê")) {
-						weatherNum = 1;
 					} else if (weathercase.matches(".*Ñ©")) {
+						weatherNum = 1;
+					} else if (weathercase.matches(".*ÔÆ")) {
 						weatherNum = 2;
 					} else if (weathercase.matches("Çç")) {
 						weatherNum = 3;
@@ -313,7 +313,9 @@ public class UpdateDataUtil {
 						weatherNum = 4;
 					} else if (weathercase.matches("ö²")) {
 						weatherNum = 5;
-					} else {
+					} else if (weathercase.matches("¸¡³¾")){
+						weatherNum = 6;
+					} else{
 						weatherNum = -1;
 					}
 					m = p.matcher(jo_weather.getJSONArray("result")

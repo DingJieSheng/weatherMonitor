@@ -35,12 +35,12 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.text.Position;
+
+import org.python.util.PythonInterpreter;
 
 import com.mysql.jdbc.PreparedStatement;
 
@@ -500,39 +500,12 @@ class MyFrame extends JFrame implements ActionListener{
 			ResultSet rs_copy=rs;
 			int[][] learningdata=new int[4][4];
 //			while(rs.)
+			PythonInterpreter pi=new PythonInterpreter();
+			pi.execfile("F:\\eclipse工作文件\\mlWeather\\pm25predict\\__init__.py");
 		} catch (SQLException e) {
 			// TODO 自动生成的 catch 块
 			e.printStackTrace();
 		}
-	}
-	class HistoryLabel{
-		public String cityname;
-		public Timestamp tsp;
-		/**
-		 * @return cityname
-		 */
-		public String getCityname() {
-			return cityname;
-		}
-		/**
-		 * @param cityname 要设置的 cityname
-		 */
-		public void setCityname(String cityname) {
-			this.cityname = cityname;
-		}
-		/**
-		 * @return tsp
-		 */
-		public Timestamp getTsp() {
-			return tsp;
-		}
-		/**
-		 * @param tsp 要设置的 tsp
-		 */
-		public void setTsp(Timestamp tsp) {
-			this.tsp = tsp;
-		}
-	    
 	}
 	private void historyDataSelect() {
 		// TODO 自动生成的方法存根
