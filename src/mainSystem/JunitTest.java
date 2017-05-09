@@ -4,17 +4,25 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+
 import org.junit.Test;
 import org.python.util.PythonInterpreter;
+
+import com.mysql.jdbc.Connection;
+import com.mysql.jdbc.PreparedStatement;
 public class JunitTest {
 
 	@Test
@@ -97,11 +105,101 @@ public class JunitTest {
 	public void test2(){
 		Process proc;
 		try {
-			proc = Runtime.getRuntime().exec("cmd.exe /c start python F:\\eclipse工作文件\\mlWeather\\pm25predict\\__init__.py");
+			proc = Runtime.getRuntime().exec("cmd.exe /c start python F:\\eclipse工作文件\\mlWeather\\pm25predict\\bp1.py");
 			proc.waitFor();
 		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
 			e.printStackTrace();
 		}  
+	}
+	
+	@Test
+	public void test3(){
+		FileOutputStream fo=null;
+		try {
+			fo=new FileOutputStream("C:\\Users\\ac\\Desktop\\exportdata.txt");
+			for (int i = 0; i <100; i++) {
+				StringBuffer sb = new StringBuffer();
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append("\r\n");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append("\r\n");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append(" ");
+				sb.append(10);
+				sb.append("\r\n");
+				fo.write(sb.toString().getBytes(), 0,
+						sb.toString().getBytes().length);
+			}
+		} catch (IOException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}finally{
+			try {
+				fo.close();
+			} catch (IOException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}
+		
+	}
+    
+	@Test
+	public void test4(){
+//		SendMailUtil.SendMail("1551499876@qq.com", "今天天气：雨 空气质量：优 温度：17摄氏度");
+		StringBuffer mailtext=new StringBuffer();
+		String receiver=null;
+		int succeed_count=0;
+		Connection conn=null;
+		try {
+			conn=(Connection) DatabaseUtil.getConn();
+			PreparedStatement preContacts = (PreparedStatement) conn
+					.prepareStatement("select * from weather,Contacts where weather.cityname=Contacts.location and weather.time_stamp=(select tmstamp.time_stamp from tmstamp where tmstamp.id>=all(select id from tmstamp));");
+		    ResultSet rs=preContacts.executeQuery();
+		    while(rs.next()){
+		    	receiver=rs.getString(rs.findColumn("mailAddress"));
+		    	mailtext.append(rs.getString(rs.findColumn("cityname"))+"天气：<br>");
+		    	mailtext.append("当前天气："+rs.getString(rs.findColumn("weather_now"))+"<br>");
+		    	mailtext.append("下一时间段天气："+rs.getString(rs.findColumn("weather_forecast"))+"<br>");
+		    	mailtext.append("空气AQI值："+rs.getString(rs.findColumn("aqi"))+"<br>");
+		    	mailtext.append("pm2.5:"+rs.getDouble(rs.findColumn("pm2_5"))+"<br>");
+		    	mailtext.append("下一时间段pm2.5:"+rs.getDouble(rs.findColumn("prepm2_5"))+"<br>");
+		    	mailtext.append(rs.getString(rs.findColumn("suggest"))+"<br>");
+		    	System.out.println(mailtext);
+		    	if(SendMailUtil.SendMail(receiver, mailtext.toString())){
+		    		succeed_count++;
+		    	}
+		    }
+		    JOptionPane.showMessageDialog(null, "成功发送"+succeed_count+"封邮件，"+(rs.getRow()+1-succeed_count)+"封邮件发送失败。");
+		} catch (SQLException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}finally{
+			try {
+				if(conn!=null&&!conn.isClosed()){
+					conn.close();
+				}
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}
 	}
 }

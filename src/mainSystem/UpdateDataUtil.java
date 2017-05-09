@@ -311,33 +311,50 @@ public class UpdateDataUtil {
 						weatherNum = 3;
 					} else if (weathercase.matches("阴")) {
 						weatherNum = 4;
-					} else if (weathercase.matches("霾")) {
+					} else if(weathercase.matches("雾")){
 						weatherNum = 5;
-					} else if (weathercase.matches("浮尘")){
+					}else if (weathercase.matches("霾")) {
 						weatherNum = 6;
+					} else if (weathercase.matches("浮尘")){
+						weatherNum = 7;
 					} else{
 						weatherNum = -1;
 					}
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("temperature"));
-					temperature_array[index] = Integer.parseInt(m
-							.replaceAll("").trim());
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("humidity"));
-					humidity_array[index] = Integer.parseInt(m.replaceAll("")
-							.trim());
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("wind"));
-					wind_array[index] = Integer.parseInt(m.replaceAll("")
-							.trim());
 				} catch (Exception e) {
 					// TODO 自动生成的 catch 块
 					weather_array[index] = "数据获取失败！";
 					weatherNum = -1;
-					temperature_array[index] = -1;
-					humidity_array[index] = -1;
-					wind_array[index] = -1;
 					e.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("temperature"));
+					temperature_array[index] = Integer.parseInt(m
+							.replaceAll("").trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					temperature_array[index] = -1;
+					e1.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("humidity"));
+					humidity_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					humidity_array[index] = -1;
+					e1.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("wind"));
+					wind_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					wind_array[index] = -1;
+					e1.printStackTrace();
 				}
 				// 获取当前城市一小时候的天气预测值
 				try {

@@ -12,5 +12,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="C:/Program Files (x86)/MySQL/Connector.J 5.1/mysql-connector-java-5.1.40-bin.jar"/>
 	<classpathentry kind="lib" path="F:/jython2.5.2/jython.jar"/>
+	<classpathentry kind="lib" path="easymail.jar"/>
+	<classpathentry kind="lib" path="mail.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

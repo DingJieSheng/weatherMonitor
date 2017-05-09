@@ -15,6 +15,8 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -35,6 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -82,6 +85,7 @@ class MyFrame extends JFrame implements ActionListener{
 	 */
 	private JDialog loadingdialog=null;
 	private JDialog jd_choose=null;
+	private JDialog jd_contacts=null;
 	/*
 	 * 数据标签
 	 */
@@ -110,6 +114,7 @@ class MyFrame extends JFrame implements ActionListener{
 	private JMenuItem ji_cityList=null;
 	private JMenuItem ji_morecityList=null;
 	private JMenuItem ji_machinelearning=null;
+	private JMenuItem ji_importcontact=null;
 	/*
 	 * 主窗口面板区
 	 */
@@ -139,6 +144,7 @@ class MyFrame extends JFrame implements ActionListener{
 	private JTextField []jt_preWeather=null;
 	private JTextField []jt_prePm=null;
 	private JTextArea []jt_suggest=null;
+	private JTextField jt_mailaddress=null;
 	/*
 	 * 各类属性值数组
 	 */
@@ -172,6 +178,7 @@ class MyFrame extends JFrame implements ActionListener{
 		ji_cityList.addActionListener(this);
 		ji_morecityList.addActionListener(this);
 		ji_machinelearning.addActionListener(this);
+		ji_importcontact.addActionListener(this);
 	}
 	/*
 	 *初始化函数 
@@ -203,17 +210,19 @@ class MyFrame extends JFrame implements ActionListener{
 //			}
 //		}).start();
 		//初始化菜单栏
-		ji_export=new JMenuItem("导出数据");
+		ji_export=new JMenuItem("导出训练数据");
 		ji_hitory=new JMenuItem("历史数据");
 		ji_cityList=new JMenuItem("更新城市列表");
 		ji_morecityList=new JMenuItem("更新详细城市列表");
 		ji_machinelearning=new JMenuItem("训练学习数据集");
+		ji_importcontact=new JMenuItem("导入联系人信息");
 		jm_file=new JMenu("文件");
 		jm_file.add(ji_export);
 		jm_tools=new JMenu("工具");
 		jm_tools.add(ji_cityList);
 		jm_tools.add(ji_morecityList);
 		jm_tools.add(ji_machinelearning);
+		jm_tools.add(ji_importcontact);
 		jm_edit=new JMenu("编辑");
 		jm_help=new JMenu("帮助");
 		jm_check=new JMenu("查看");
@@ -475,8 +484,10 @@ class MyFrame extends JFrame implements ActionListener{
 //			有待后期完善-------------------------------------------------------------------
 		}else if(source.equals("发送通知")){
 //			有待后期完善-------------------------------------------------------------------
-		}else if(source.equals("导出数据")){
+			sendMail();
+		}else if(source.equals("导出训练数据")){
 //			有待后期完善-------------------------------------------------------------------
+			exportData();
 		}else if(source.equals("历史数据")){
 			historyDataSelect();
 		}else if(source.equals("更新城市列表")){
@@ -489,6 +500,131 @@ class MyFrame extends JFrame implements ActionListener{
 			loadingdialog.setVisible(false);;
 		}else if(source.equals("训练学习数据集")){
 			machineLearning();
+		}else if(source.equals("导入联系人信息")){
+			importcontacts();
+		}
+	}
+//	导入联系人信息
+	public void importcontacts() {
+		// TODO 自动生成的方法存根
+		jd_contacts=new JDialog(MyFrame.this, "导入联系人信息");
+		jd_contacts.setIconImage(iconImage);
+		try {
+			conn=DatabaseUtil.getConn();
+			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select cityname from citylist;");
+			ResultSet rs=pre.executeQuery();
+			rs.last(); 
+			int size= rs.getRow(); 
+			rs.beforeFirst();
+			int count=0;
+			city_label=new String[size+1];
+			while(rs.next()){
+				city_label[count] = rs.getString(rs.findColumn("cityname"));
+				count++;
+			}
+			jc_cityname=new JComboBox<>(city_label);
+			jt_mailaddress=new JTextField();
+			jt_mailaddress.setColumns(20);
+			FlowLayout fl=new FlowLayout(FlowLayout.CENTER);
+			jd_contacts.setLayout(fl);
+			jd_contacts.add(new JLabel("所在城市："));
+			jd_contacts.add(jc_cityname);
+			jd_contacts.add(new JLabel("邮件地址："));
+			jd_contacts.add(jt_mailaddress);
+		    JButton bt_yes=new JButton("确定");
+		    bt_yes.addActionListener(new myListener1());
+		    JButton bt_no=new JButton("取消");
+		    bt_no.addActionListener(new myListener1());
+		    jd_contacts.add(bt_yes);
+		    jd_contacts.add(bt_no);
+		    jd_contacts.setSize(500, 100);
+		    Point po=jd_contacts.getParent().getLocationOnScreen();
+		    jd_contacts.setLocation(po.x+300, po.y+250);
+		    jd_contacts.setResizable(false);
+		    jd_contacts.setVisible(true);
+		} catch (SQLException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}
+	}
+	
+//	发送邮件
+	public void sendMail() {
+		// TODO 自动生成的方法存根
+		StringBuffer mailtext=new StringBuffer();
+		String receiver=null;
+		int succeed_count=0;
+		try {
+			conn=DatabaseUtil.getConn();
+			PreparedStatement preContacts = (PreparedStatement) conn
+					.prepareStatement("select * from weather,Contacts where weather.cityname=Contacts.location and weather.time_stamp=(select tmstamp.time_stamp from tmstamp where tmstamp.id>=all(select id from tmstamp));");
+		    ResultSet rs=preContacts.executeQuery();
+		    while(rs.next()){
+		    	receiver=rs.getString(rs.findColumn("mailAddress"));
+		    	mailtext.append(rs.getString(rs.findColumn("cityname"))+"天气：<br>");
+		    	mailtext.append("当前天气："+rs.getString(rs.findColumn("weather_now"))+"<br>");
+		    	mailtext.append("下一时间段天气："+rs.getString(rs.findColumn("weather_forecast"))+"<br>");
+		    	mailtext.append("空气AQI值："+rs.getString(rs.findColumn("aqi"))+"<br>");
+		    	mailtext.append("PM2.5:"+rs.getDouble(rs.findColumn("pm2_5"))+"<br>");
+		    	mailtext.append("下一时间段PM2.5:"+rs.getDouble(rs.findColumn("prepm2_5"))+"<br>");
+		    	mailtext.append(rs.getString(rs.findColumn("suggest"))+"<br>");
+		    	if(SendMailUtil.SendMail(receiver, mailtext.toString())){
+		    		succeed_count++;
+		    	}
+		    }
+		    JOptionPane.showMessageDialog(MyFrame.this, "成功发送"+succeed_count+"封邮件，"+(rs.getRow()+1-succeed_count)+"封邮件发送失败。");
+		} catch (SQLException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}finally{
+			try {
+				if(conn!=null&&!conn.isClosed()){
+					conn.close();
+				}
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}
+		}
+	}
+	public void exportData() {
+		// TODO 自动生成的方法存根
+		try {
+			conn=DatabaseUtil.getConn();
+			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select pm2_5,temperature,humidity,wind,weatherNum from weather;");
+			ResultSet rs=pre.executeQuery();
+			ResultSet rs_copy=rs;
+			FileOutputStream fo_data=new FileOutputStream(new File("C:\\Users\\ac\\Desktop\\exportdata.txt"));
+			FileOutputStream fo_aimdata=new FileOutputStream(new File("C:\\Users\\ac\\Desktop\\aimdata.txt"));
+			while(rs.next()){
+				if (rs.getInt(rs.findColumn("pm2_5")) != -1
+						&& rs.getInt(rs.findColumn("temperature")) != -1
+						&& rs.getInt(rs.findColumn("humidity")) != -1
+						&& rs.getInt(rs.findColumn("wind")) != -1
+						&& rs.getInt(rs.findColumn("weatherNum")) != -1) {
+					StringBuffer sb = new StringBuffer();
+					StringBuffer sb1 = new StringBuffer();
+					sb.append(rs.getInt(rs.findColumn("temperature")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("humidity")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("wind")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("weatherNum")));
+					sb.append("\r\n");
+					fo_data.write(sb.toString().getBytes(), 0, sb
+							.toString().getBytes().length);
+					sb1.append(String.valueOf(rs.getInt(rs.findColumn("pm2_5"))/1000.0));
+					sb1.append("\r\n");
+					fo_aimdata.write(sb1.toString().getBytes(), 0, sb1.toString().getBytes().length);
+				}
+			}
+			rs.close();
+			fo_data.close();
+			fo_aimdata.close();
+		} catch (SQLException | IOException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
 		}
 	}
 	private void machineLearning() {
@@ -561,6 +697,43 @@ class MyFrame extends JFrame implements ActionListener{
 			e.printStackTrace();
 		}
 	}
+
+//	联系人按钮监听类
+	class myListener1 implements ActionListener{
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// TODO 自动生成的方法存根
+			if(e.getActionCommand().equals("确定")){
+				insertContactData((String)jt_mailaddress.getText(),(String)jc_cityname.getSelectedItem());
+			}
+			jd_contacts.setVisible(false);
+		}
+
+		private void insertContactData(String text,String selectedItem) {
+			// TODO 自动生成的方法存根
+			try {
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("insert into contacts (mailAddress , location) values(? ,?);");
+				pre.setNString(1, text);
+				pre.setNString(2, selectedItem);
+				pre.execute();
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}finally{
+				try {
+					if(conn!=null&&!conn.isClosed()){
+						conn.close();
+					}
+				} catch (SQLException e) {
+					// TODO 自动生成的 catch 块
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+
 //	数据标签按钮监听类
 	class myListener implements ActionListener{
 
