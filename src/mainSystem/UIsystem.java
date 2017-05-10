@@ -16,6 +16,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
@@ -26,6 +27,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -441,7 +443,9 @@ class MyFrame extends JFrame implements ActionListener{
 				conn.close();
 			}
 		}
-		loadingdialog.setVisible(false);;
+		loadingdialog.setVisible(false);
+		loadingdialog.dispose();
+		loadingdialog=null;
 	}
 	/**
 	 * @param container
@@ -517,7 +521,7 @@ class MyFrame extends JFrame implements ActionListener{
 			int size= rs.getRow(); 
 			rs.beforeFirst();
 			int count=0;
-			city_label=new String[size+1];
+			city_label=new String[size];
 			while(rs.next()){
 				city_label[count] = rs.getString(rs.findColumn("cityname"));
 				count++;
@@ -568,6 +572,7 @@ class MyFrame extends JFrame implements ActionListener{
 		    	mailtext.append("PM2.5:"+rs.getDouble(rs.findColumn("pm2_5"))+"<br>");
 		    	mailtext.append("下一时间段PM2.5:"+rs.getDouble(rs.findColumn("prepm2_5"))+"<br>");
 		    	mailtext.append(rs.getString(rs.findColumn("suggest"))+"<br>");
+		    	mailtext.append(rs.getTimestamp(rs.findColumn("time_stamp"))+"<br>");
 		    	if(SendMailUtil.SendMail(receiver, mailtext.toString())){
 		    		succeed_count++;
 		    	}
@@ -629,18 +634,77 @@ class MyFrame extends JFrame implements ActionListener{
 	}
 	private void machineLearning() {
 		// TODO 自动生成的方法存根
-		try {
-			conn=DatabaseUtil.getConn();
-			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select temperature,humidity,wind,weatherNum from weather;");
-			ResultSet rs=pre.executeQuery();
-			ResultSet rs_copy=rs;
-			int[][] learningdata=new int[4][4];
-//			while(rs.)
-			PythonInterpreter pi=new PythonInterpreter();
-			pi.execfile("F:\\eclipse工作文件\\mlWeather\\pm25predict\\__init__.py");
-		} catch (SQLException e) {
-			// TODO 自动生成的 catch 块
-			e.printStackTrace();
+//		try {
+//			conn=DatabaseUtil.getConn();
+//			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select temperature,humidity,wind,weatherNum from weather;");
+//			ResultSet rs=pre.executeQuery();
+//			ResultSet rs_copy=rs;
+//			int[][] learningdata=new int[4][4];
+////			while(rs.)
+//			PythonInterpreter pi=new PythonInterpreter();
+//			pi.execfile("F:\\eclipse工作文件\\mlWeather\\pm25predict\\__init__.py");
+//		} catch (SQLException e) {
+//			// TODO 自动生成的 catch 块
+//			e.printStackTrace();
+//		}
+		new Thread(new myRunnable()).start();
+		
+		
+	}
+	
+	class myRunnable implements Runnable{
+        private double []weight=new double[4];
+		@Override
+		public void run() {
+			// TODO 自动生成的方法存根
+			Process proc=null;
+			FileInputStream fi=null;
+			Scanner sc=null;
+			int count=0;
+			try {
+				proc = Runtime.getRuntime().exec("python F:\\eclipse工作文件\\mlWeather\\pm25predict\\bp1.py");
+				proc.waitFor();
+				fi=new FileInputStream(new File("C:\\Users\\ac\\Desktop\\weight.txt"));
+				sc=new Scanner(fi);
+				while(sc.hasNextLine()){
+					String result=sc.nextLine();
+					if(result!=null&&!result.isEmpty()){
+						weight[count]=Double.parseDouble(result);
+						count++;
+					}
+				}
+				fi.close();
+				insertResult();
+			} catch (Exception e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			} 
+		}
+		
+//		将学习结果写入数据库
+		public void insertResult(){
+			try {
+				conn=DatabaseUtil.getConn();
+				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("insert into weights(weight1,weight2,weight3,weight4,learntime)values(?,?,?,?,?);");
+				pre.setDouble(1, weight[0]);
+				pre.setDouble(2, weight[1]);
+				pre.setDouble(3, weight[2]);
+				pre.setDouble(4, weight[3]);
+				pre.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+				pre.execute();
+			} catch (SQLException e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			}finally{
+				try {
+					if(conn!=null&&!conn.isClosed()){
+						conn.close();
+					}
+				} catch (SQLException e) {
+					// TODO 自动生成的 catch 块
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	private void historyDataSelect() {

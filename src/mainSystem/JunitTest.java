@@ -4,22 +4,21 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
 import org.junit.Test;
-import org.python.util.PythonInterpreter;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
@@ -103,14 +102,30 @@ public class JunitTest {
 	
 	@Test
 	public void test2(){
-		Process proc;
+		Process proc=null;
+		FileInputStream fi=null;
+		Scanner sc=null;
+		double[] weight=new double[4];
+		int count=0;
 		try {
-			proc = Runtime.getRuntime().exec("cmd.exe /c start python F:\\eclipse工作文件\\mlWeather\\pm25predict\\bp1.py");
+			proc = Runtime.getRuntime().exec("python F:\\eclipse工作文件\\mlWeather\\pm25predict\\bp1.py");
 			proc.waitFor();
+			System.out.println("finished!");
+			fi=new FileInputStream(new File("C:\\Users\\ac\\Desktop\\weight.txt"));
+			sc=new Scanner(fi);
+			while(sc.hasNextLine()){
+				String result=sc.nextLine();
+				if(result!=null&&!result.isEmpty()){
+					weight[count]=Double.parseDouble(result);
+					count++;
+				}
+			}
+			System.out.println(weight[0]+"\n"+weight[1]+"\n"+weight[2]+"\n"+weight[3]);
+			fi.close();
 		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
 			e.printStackTrace();
-		}  
+		} 
 	}
 	
 	@Test
@@ -182,6 +197,7 @@ public class JunitTest {
 		    	mailtext.append("pm2.5:"+rs.getDouble(rs.findColumn("pm2_5"))+"<br>");
 		    	mailtext.append("下一时间段pm2.5:"+rs.getDouble(rs.findColumn("prepm2_5"))+"<br>");
 		    	mailtext.append(rs.getString(rs.findColumn("suggest"))+"<br>");
+		    	mailtext.append(rs.getTimestamp(rs.findColumn("time_stamp"))+"<br>");
 		    	System.out.println(mailtext);
 		    	if(SendMailUtil.SendMail(receiver, mailtext.toString())){
 		    		succeed_count++;
