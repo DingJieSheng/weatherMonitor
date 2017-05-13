@@ -14,5 +14,9 @@
 	<classpathentry kind="lib" path="F:/jython2.5.2/jython.jar"/>
 	<classpathentry kind="lib" path="easymail.jar"/>
 	<classpathentry kind="lib" path="mail.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ac/Desktop/jfreechart-1.0.19/jfreechart-1.0.19/lib/hamcrest-core-1.3.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ac/Desktop/jfreechart-1.0.19/jfreechart-1.0.19/lib/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ac/Desktop/jfreechart-1.0.19/jfreechart-1.0.19/lib/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ac/Desktop/jfreechart-1.0.19/jfreechart-1.0.19/lib/jfreechart-1.0.19-experimental.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
