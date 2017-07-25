@@ -1,6 +1,4 @@
-/**
- * 
- */
+
 package mainSystem;
 
 import java.awt.BorderLayout;
@@ -20,12 +18,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -81,7 +80,7 @@ class MyFrame extends JFrame implements ActionListener{
 	 */
 	private Image iconImage=null;
 	/*
-	 * 生成图标的监听器
+	 * 生成图表的监听器
 	 */
 	private CreateChartListener chartListener=null;
 	/*
@@ -195,6 +194,11 @@ class MyFrame extends JFrame implements ActionListener{
 	 *初始化函数 
 	 */
 	public void init() {
+//		创建文件存放目录
+		File file=new File("C:\\weathermonitor");
+		if(!file.exists()){
+			file.mkdir();
+		}
 //		加载数据库驱动程序
 		try {
 			DatabaseUtil.getDatebase();
@@ -258,7 +262,7 @@ class MyFrame extends JFrame implements ActionListener{
 		jl_pm=new JLabel("PM2.5浓度",JLabel.CENTER);
 		jl_prePm=new JLabel("PM2.5预测值",JLabel.CENTER);
 		jl_preWeather=new JLabel("天气预测值",JLabel.CENTER);
-		jl_suggest=new JLabel("出行建议",JLabel.CENTER);
+		jl_suggest=new JLabel("生活建议",JLabel.CENTER);
 		jl_time=new JLabel("时间戳",JLabel.CENTER);
 		jl_weather=new JLabel("天气",JLabel.CENTER);
 		jp_citiesData =new JPanel();
@@ -377,12 +381,17 @@ class MyFrame extends JFrame implements ActionListener{
 		weatherNum_array=UpdateDataUtil.getWeatherNum_array();
 //		获取当前数据的时间戳
 //		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//		SimpleDateFormat df1=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Timestamp tmsp=null;
-		if(internet){
-			tmsp=Timestamp.valueOf(time_point_array[17]);
-		}else{
-			tmsp=Timestamp.valueOf(time_point_array[17]);
+		try {
+			if(internet){
+				tmsp=Timestamp.valueOf(time_point_array[17]);
+			}else{
+				tmsp=Timestamp.valueOf(time_point_array[17]);
+			}
+		} catch (Exception e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
 		}
 		jp_citiesData.removeAll();
 		GridLayout gl=new GridLayout(0,8,1,15);
@@ -452,7 +461,7 @@ class MyFrame extends JFrame implements ActionListener{
 								.prepareStatement("insert into weather (cityname, time_stamp, aqi, pm2_5, prepm2_5, weather_now, weather_forecast, suggest,temperature,humidity,wind,weatherNum) values(?,?,?,?,?,?,?,?,?,?,?,?)");
 						preparedStatement.setString(1, city_array[i]);
 						//					df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-						df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//						df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 						preparedStatement.setTimestamp(2,
 								Timestamp.valueOf(time_point_array[17]));//北京市
 						preparedStatement.setDouble(3, aqi_array[i]);
@@ -501,6 +510,7 @@ class MyFrame extends JFrame implements ActionListener{
 		container.add(jp_buttonArea, BorderLayout.SOUTH);
 		container.add(jp_weatherItem, BorderLayout.NORTH);
 		this.setSize(1100, 600);
+		this.setMinimumSize(new Dimension(1100, 600));
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		Toolkit kit = Toolkit.getDefaultToolkit();
 		Dimension screensize = kit.getScreenSize();
@@ -536,7 +546,7 @@ class MyFrame extends JFrame implements ActionListener{
 				}
 			}).start();
 		}else if(source.equals("预测数据")){
-//			有待后期完善-------------------------------------------------------------------
+			prediction();
 		}else if(source.equals("发送通知")){
 			sendMail();
 		}else if(source.equals("导出训练数据")){
@@ -548,11 +558,27 @@ class MyFrame extends JFrame implements ActionListener{
 			}
 			historyDataSelect();
 		}else if(source.equals("更新城市列表")){
-			setloadingDialog();
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					// TODO 自动生成的方法存根
+					setloadingDialog();
+				}
+			}).start();
 			updatecitylist();
 			loadingdialog.setVisible(false);
+			loadingdialog.dispose();
+			loadingdialog=null;
 		}else if(source.equals("更新详细城市列表")){
-			setloadingDialog();
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					// TODO 自动生成的方法存根
+					setloadingDialog();
+				}
+			}).start();
 			updatemorecitylist();
 			loadingdialog.setVisible(false);
 			loadingdialog.dispose();
@@ -576,6 +602,44 @@ class MyFrame extends JFrame implements ActionListener{
 				// TODO 自动生成的 catch 块
 				e1.printStackTrace();
 			}
+		}
+	}
+
+	public void prediction() {
+		// TODO 自动生成的方法存根
+		try {
+			conn=DatabaseUtil.getConn();
+		    PreparedStatement pre=(PreparedStatement) conn
+				.prepareStatement("select * from weather where weather.time_stamp=(select tmstamp.time_stamp from tmstamp where tmstamp.id>=all(select id from tmstamp));");
+		    ResultSet rs=pre.executeQuery();
+			FileOutputStream fo_data=new FileOutputStream(new File("C:\\weathermonitor\\predictdata.txt"));
+			while(rs.next()){
+//				if (rs.getInt(rs.findColumn("pm2_5")) != -1
+//						&& rs.getInt(rs.findColumn("temperature")) != -1
+//						&& rs.getInt(rs.findColumn("humidity")) != -1
+//						&& rs.getInt(rs.findColumn("wind")) != -1
+//						&& rs.getInt(rs.findColumn("weatherNum")) != -1) {
+					StringBuffer sb = new StringBuffer();
+					StringBuffer sb1 = new StringBuffer();
+					sb.append(rs.getInt(rs.findColumn("temperature")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("humidity")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("wind")));
+					sb.append(" ");
+					sb.append(rs.getInt(rs.findColumn("weatherNum")));
+					sb.append("\r\n");
+					fo_data.write(sb.toString().getBytes(), 0, sb
+							.toString().getBytes().length);
+//				}
+			}
+			rs.close();
+			fo_data.close();
+			conn.close();
+			new Thread(new myRunnable1()).start();
+		} catch (Exception e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
 		}
 	}
 //  “关于”对话框
@@ -715,11 +779,10 @@ class MyFrame extends JFrame implements ActionListener{
 		// TODO 自动生成的方法存根
 		try {
 			conn=DatabaseUtil.getConn();
-			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select pm2_5,temperature,humidity,wind,weatherNum from weather;");
+			PreparedStatement pre=(PreparedStatement) conn.prepareStatement("select * from weather where id >(select MAX(id) from weather)-1000;");
 			ResultSet rs=pre.executeQuery();
-			ResultSet rs_copy=rs;
-			FileOutputStream fo_data=new FileOutputStream(new File("C:\\Users\\ac\\Desktop\\exportdata.txt"));
-			FileOutputStream fo_aimdata=new FileOutputStream(new File("C:\\Users\\ac\\Desktop\\aimdata.txt"));
+			FileOutputStream fo_data=new FileOutputStream(new File("C:\\weathermonitor\\exportdata.txt"));
+			FileOutputStream fo_aimdata=new FileOutputStream(new File("C:\\weathermonitor\\aimdata.txt"));
 			while(rs.next()){
 				if (rs.getInt(rs.findColumn("pm2_5")) != -1
 						&& rs.getInt(rs.findColumn("temperature")) != -1
@@ -751,7 +814,7 @@ class MyFrame extends JFrame implements ActionListener{
 			e.printStackTrace();
 		}
 	}
-	private void machineLearning() {
+	public void machineLearning() {
 		// TODO 自动生成的方法存根
 //		try {
 //			conn=DatabaseUtil.getConn();
@@ -772,7 +835,68 @@ class MyFrame extends JFrame implements ActionListener{
 	}
 	
 	class myRunnable implements Runnable{
-        private double []weight=new double[4];
+		@Override
+		public void run() {
+			// TODO 自动生成的方法存根
+			Process proc=null;
+			try {
+				proc = Runtime.getRuntime().exec("python bp1.py");
+				proc.waitFor();
+//				fi=new FileInputStream(new File("C:\\Users\\ac\\Desktop\\weight.txt"));
+//				sc=new Scanner(fi);
+//				while(sc.hasNextLine()){
+//					String result=sc.nextLine();
+//					if(result!=null&&!result.isEmpty()){
+//						weight[count]=Double.parseDouble(result);
+//						count++;
+//					}
+//				}
+//				fi.close();
+//				insertResult();
+			    InputStreamReader ir =new InputStreamReader(proc.getInputStream());
+			    LineNumberReader input=new LineNumberReader(ir);
+				String line;
+				while((line=input.readLine())!=null){
+					
+				}
+				input.close();
+				ir.close();
+				JOptionPane.showMessageDialog(MyFrame.this, "数据训练完成！", "提示", JOptionPane.INFORMATION_MESSAGE);
+			} catch (Exception e) {
+				// TODO 自动生成的 catch 块
+				e.printStackTrace();
+			} 
+		}
+		
+//		将学习结果写入数据库
+//		public void insertResult(){
+//			try {
+//				conn=DatabaseUtil.getConn();
+//				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("insert into weights(weight1,weight2,weight3,weight4,learntime)values(?,?,?,?,?);");
+//				pre.setDouble(1, weight[0]);
+//				pre.setDouble(2, weight[1]);
+//				pre.setDouble(3, weight[2]);
+//				pre.setDouble(4, weight[3]);
+//				pre.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+//				pre.execute();
+//				JOptionPane.showMessageDialog(MyFrame.this, "数据训练完成！", "提示", JOptionPane.INFORMATION_MESSAGE);
+//			} catch (SQLException e) {
+//				// TODO 自动生成的 catch 块
+//				e.printStackTrace();
+//			}finally{
+//				try {
+//					if(conn!=null&&!conn.isClosed()){
+//						conn.close();
+//					}
+//				} catch (SQLException e) {
+//					// TODO 自动生成的 catch 块
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+	}
+	
+	class myRunnable1 implements Runnable{
 		@Override
 		public void run() {
 			// TODO 自动生成的方法存根
@@ -781,19 +905,28 @@ class MyFrame extends JFrame implements ActionListener{
 			Scanner sc=null;
 			int count=0;
 			try {
-				proc = Runtime.getRuntime().exec("python bp1.py");
+				proc = Runtime.getRuntime().exec("python predict.py");
 				proc.waitFor();
-				fi=new FileInputStream(new File("C:\\Users\\ac\\Desktop\\weight.txt"));
+				fi=new FileInputStream(new File("C:\\weathermonitor\\result.txt"));
 				sc=new Scanner(fi);
 				while(sc.hasNextLine()){
 					String result=sc.nextLine();
 					if(result!=null&&!result.isEmpty()){
-						weight[count]=Double.parseDouble(result);
+						if(Double.parseDouble(result)*1000>500){
+							pre_pm2_5_array[count]=500.0;
+						}else{
+							pre_pm2_5_array[count]=Double.parseDouble(result)*1000;
+							pre_pm2_5_array[count]=Math.round(pre_pm2_5_array[count]);
+						}
+						jt_prePm[count].setText(pre_pm2_5_array[count] + "");
+						jt_prePm[count].setEditable(false);
 						count++;
 					}
 				}
 				fi.close();
+				sc.close();
 				insertResult();
+				JOptionPane.showMessageDialog(MyFrame.this, "数据预测完成！", "提示", JOptionPane.INFORMATION_MESSAGE);
 			} catch (Exception e) {
 				// TODO 自动生成的 catch 块
 				e.printStackTrace();
@@ -802,16 +935,26 @@ class MyFrame extends JFrame implements ActionListener{
 		
 //		将学习结果写入数据库
 		public void insertResult(){
+			int count=0;
 			try {
-				conn=DatabaseUtil.getConn();
-				PreparedStatement pre=(PreparedStatement) conn.prepareStatement("insert into weights(weight1,weight2,weight3,weight4,learntime)values(?,?,?,?,?);");
-				pre.setDouble(1, weight[0]);
-				pre.setDouble(2, weight[1]);
-				pre.setDouble(3, weight[2]);
-				pre.setDouble(4, weight[3]);
-				pre.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-				pre.execute();
-				JOptionPane.showMessageDialog(MyFrame.this, "数据训练完成！", "提示", JOptionPane.INFORMATION_MESSAGE);
+				conn = DatabaseUtil.getConn();
+				PreparedStatement pre=null;
+				PreparedStatement pre1=null;
+				Timestamp time=null;
+				pre1=(PreparedStatement) conn.prepareStatement("select tmstamp.time_stamp from tmstamp where tmstamp.id>=all(select id from tmstamp);");
+				ResultSet res=pre1.executeQuery();
+				while(res.next()){
+					time=res.getTimestamp("time_stamp");
+				}
+				while (count<pre_pm2_5_array.length) {
+					pre = (PreparedStatement) conn
+							.prepareStatement("update weather set prepm2_5= ? where weather.time_stamp=? and weather.cityname= ? ;");
+					pre.setDouble(1, pre_pm2_5_array[count]);
+					pre.setTimestamp(2, time);
+					pre.setString(3, city_array[count]);
+					pre.executeUpdate();
+					count++;
+				}
 			} catch (SQLException e) {
 				// TODO 自动生成的 catch 块
 				e.printStackTrace();
@@ -827,6 +970,7 @@ class MyFrame extends JFrame implements ActionListener{
 			}
 		}
 	}
+	
 	private void historyDataSelect() {
 		// TODO 自动生成的方法存根
 		jd_choose=new JDialog(MyFrame.this, "历史数据标签选择框");
@@ -928,7 +1072,7 @@ class MyFrame extends JFrame implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			// TODO 自动生成的方法存根
 			if(e.getActionCommand().equals("确定")){
-				if(jc_tspstart.getSelectedIndex()>jc_tspend.getSelectedIndex()){
+				if(jc_tspstart.getSelectedIndex()>jc_tspend.getSelectedIndex()&&!(jc_tspstart.getSelectedItem()==null||jc_tspend.getSelectedItem()==null)){
 					JOptionPane.showMessageDialog(MyFrame.this, "时间选择非法，起始时间不能大于截止时间！", "警告", JOptionPane.WARNING_MESSAGE);
 				}else{
 					checkHistoryData((String)jc_cityname.getSelectedItem(),(Timestamp)jc_tspstart.getSelectedItem(),(Timestamp)jc_tspend.getSelectedItem());
@@ -1193,6 +1337,7 @@ class MyFrame extends JFrame implements ActionListener{
 		GridLayout gl = new GridLayout(0, 8, 1, 15);
 		jp_citiesData.setLayout(gl);
 		// 初始化属性值显示框
+		jl_cityList =new JLabel[city_array.length];
 		jt_aqi = new JTextField[city_array.length];
 		jt_pm = new JTextField[city_array.length];
 		jt_prePm = new JTextField[city_array.length];
@@ -1220,7 +1365,7 @@ class MyFrame extends JFrame implements ActionListener{
 				jt_pm[i].setEditable(false);
 				jt_aqi[i].setText(aqi_array[i] + "");
 				jt_aqi[i].setEditable(false);
-				jt_preWeather[i].setText(preweather_array[i]);
+				jt_preWeather[i].setText(preWeather_array[i]);
 				jt_preWeather[i].setEditable(false);
 				jt_prePm[i].setText(pre_pm2_5_array[i] + "");
 				jt_prePm[i].setEditable(false);

@@ -96,8 +96,8 @@ public class DataRequest {
 		if(flag_internet){
 			if (city_list!=null&&!city_list.isEmpty()) {
 				Iterator<String> it_city=city_list.iterator();
-				fw_citylist = new FileWriter(new File(
-						"historyData/cityList" + currenttime + ".txt"),true);
+//				fw_citylist = new FileWriter(new File(
+//						"historyData/cityList" + currenttime + ".txt"),true);
 				while (it_city.hasNext()) {
 					try {
 						String cityname=it_city.next();
@@ -124,7 +124,7 @@ public class DataRequest {
 						while ((count = br_citylist.read(buff)) != -1) {
 							decode = new String(buff, 0, count);
 							stb.append(decode);
-							fw_citylist.write(decode, 0, decode.length());
+//							fw_citylist.write(decode, 0, decode.length());
 						}
 						// stb.deleteCharAt(0);JSONObject第一个字符是”{“，而JOSNArray是”[”。
 						// stb.deleteCharAt(stb.length()-1);
@@ -140,10 +140,10 @@ public class DataRequest {
 						throw e;
 					}
 				}
-				if (fw_citylist!=null&&br_citylist!=null) {
-					fw_citylist.close();
-					br_citylist.close();
-				}
+//				if (fw_citylist!=null&&br_citylist!=null) {
+//					fw_citylist.close();
+//					br_citylist.close();
+//				}
 				connection.disconnect();
 			}else{
 			throw new Exception("网络获取失败！");
@@ -182,7 +182,7 @@ public class DataRequest {
 				connection.setReadTimeout(1000*60);// 设置超时时间为60秒
 				connection.setDoInput(true);// 读取数据
 				connection.setRequestMethod("GET");// 设置请求方式为GET方式
-				fw_citylist = new FileWriter(new File("historyData/cityWeather"+currenttime+".txt"),true);
+//				fw_citylist = new FileWriter(new File("historyData/cityWeather"+currenttime+".txt"),true);
 				if (connection.getResponseCode() == 200) {// 请求码200表示请求成功
 					br_citylist = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 				} else {
@@ -195,8 +195,8 @@ public class DataRequest {
 				while ((count = br_citylist.read(buff)) != -1) {
 					decode = new String(buff, 0, count);
 					stb_weather.append(decode);
-					fw_citylist.write(buff, 0,
-							count);
+//					fw_citylist.write(buff, 0,
+//							count);
 				}
 				// stb.deleteCharAt(0);JSONObject第一个字符是”{“，而JOSNArray是”[”。
 				// stb.deleteCharAt(stb.length()-1);
@@ -206,14 +206,14 @@ public class DataRequest {
 				// TODO 自动生成的 catch 块
 				e.printStackTrace();
 			} finally {
-				if (fw_citylist != null) {
-					try {
-						fw_citylist.close();
-					} catch (IOException e) {
-						// TODO 自动生成的 catch 块
-						e.printStackTrace();
-					}
-				}
+//				if (fw_citylist != null) {
+//					try {
+//						fw_citylist.close();
+//					} catch (IOException e) {
+//						// TODO 自动生成的 catch 块
+//						e.printStackTrace();
+//					}
+//				}
 				if (br_citylist != null) {
 					try {
 						br_citylist.close();

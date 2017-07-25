@@ -295,6 +295,7 @@ public class UpdateDataUtil {
 		int weatherNum=0;
 		String exerciseIndex=null;
 		String washIndex=null;
+		String dressingIndex=null;
 		if(pm2_5_array[index]<=100){
 			exerciseIndex="适宜";
 		}else if(pm2_5_array[index]<=200){
@@ -387,12 +388,25 @@ public class UpdateDataUtil {
 					preWeather_array[index] = "数据获取失败！";
 					e.printStackTrace();
 				}
+				if (jo_weather.getJSONArray("result").getJSONObject(0)
+						.getString("dressingIndex")!=null&&!jo_weather.getJSONArray("result").getJSONObject(0)
+								.getString("dressingIndex").isEmpty()) {
+					dressingIndex=jo_weather.getJSONArray("result").getJSONObject(0)
+							.getString("dressingIndex");
+				}else{
+					if(temperature_array[index]<=5){
+						dressingIndex="羽绒服类";
+					}else if(temperature_array[index]<=15){
+						dressingIndex="毛衣类";
+					}else if(temperature_array[index]<=25){
+						dressingIndex="单衣长袖类";
+					}else{
+						dressingIndex="短袖类";
+					}
+				}
 				suggest_array[index] = "着装建议："
-						+ jo_weather.getJSONArray("result").getJSONObject(0)
-								.getString("dressingIndex")
-						+ "\n运动建议："
-						+ exerciseIndex+ "\n洗刷建议："
-						+ washIndex;
+						+ dressingIndex + "\n运动建议："
+						+ exerciseIndex + "\n洗刷建议：" + washIndex;
 			}else{
 				weather_array[index]="未查询到数据！";
 				preWeather_array[index]="未查询到数据！";
@@ -440,6 +454,8 @@ public class UpdateDataUtil {
 			throw e;
 		}
     	if (flag_success) {
+    		city_list.clear();
+    		belongcity_list.clear();
 			jo_cityList = DataRequest.getJo_cityList();
 			if (jo_cityList.getString("msg").equals("success")) {
 				ja = jo_cityList.getJSONArray("result");

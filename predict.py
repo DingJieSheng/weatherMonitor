@@ -1,0 +1,21 @@
+import numpy as np
+def nonlin(x,deriv=False):
+    if(deriv==True):
+        return x*(1-x)
+    return 1/(1+np.exp(-x))
+X = np.loadtxt("weight0.txt")
+X1 = np.loadtxt("weight1.txt")
+X2 = np.loadtxt("weight2.txt")
+X=X.reshape(4,15)
+X1=X1.reshape(15,5)
+X2=X2.reshape(5,1)
+y = np.loadtxt("C:\\Users\\ac\\Desktop\\predictdata.txt")
+Z=nonlin(np.dot(y,X))
+Z1=nonlin(np.dot(Z,X1))
+Z2=nonlin(np.dot(Z1,X2))
+np.savetxt("C:\\Users\\ac\\Desktop\\result.txt",Z2,fmt="%f\r\n")
+# print (Z)
+# a1=nonlin(np.dot(z,syn0))
+# a2=nonlin(np.dot(a1,syn1))
+# a3=nonlin(np.dot(a2,syn2))
+# print (a3)

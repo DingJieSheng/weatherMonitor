@@ -18,7 +18,7 @@ public class DatabaseUtil {
 	private static final String driverName="com.mysql.jdbc.Driver";
 	private static final String userName="SDJ";
 	private static final String userPassword="sdj808545365";
-	private static final String url="jdbc:mysql://127.0.0.1:3306/weathermonitor";
+	private static final String url="jdbc:mysql://4.4.1.129:3306/weathermonitor";
 //	连接数据库得到连接对象conn
 	public static void getDatebase() throws Exception{
 		Class.forName(driverName);

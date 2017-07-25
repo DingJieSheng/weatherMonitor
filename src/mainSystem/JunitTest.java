@@ -10,14 +10,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
 import org.junit.Test;
 
 import com.mysql.jdbc.Connection;
@@ -108,20 +113,20 @@ public class JunitTest {
 		double[] weight=new double[4];
 		int count=0;
 		try {
-			proc = Runtime.getRuntime().exec("python F:\\eclipse工作文件\\mlWeather\\pm25predict\\bp1.py");
+			proc = Runtime.getRuntime().exec("python bp1.py");
 			proc.waitFor();
 			System.out.println("finished!");
-			fi=new FileInputStream(new File("C:\\Users\\ac\\Desktop\\weight.txt"));
-			sc=new Scanner(fi);
-			while(sc.hasNextLine()){
-				String result=sc.nextLine();
-				if(result!=null&&!result.isEmpty()){
-					weight[count]=Double.parseDouble(result);
-					count++;
-				}
-			}
-			System.out.println(weight[0]+"\n"+weight[1]+"\n"+weight[2]+"\n"+weight[3]);
-			fi.close();
+//			fi=new FileInputStream(new File("weight.txt"));
+//			sc=new Scanner(fi);
+//			while(sc.hasNextLine()){
+//				String result=sc.nextLine();
+//				if(result!=null&&!result.isEmpty()){
+//					weight[count]=Double.parseDouble(result);
+//					count++;
+//				}
+//			}
+//			System.out.println(weight[0]+"\n"+weight[1]+"\n"+weight[2]+"\n"+weight[3]);
+//			fi.close();
 		} catch (Exception e) {
 			// TODO 自动生成的 catch 块
 			e.printStackTrace();
@@ -219,4 +224,11 @@ public class JunitTest {
 		}
 	}
     
+	@Test
+	public void test6(){
+		int[]a=new int[]{1,5,3,65,41,8,45,7,0};
+		Arrays.sort(a);
+		System.out.println(a[0]);
+	}
+	
 }

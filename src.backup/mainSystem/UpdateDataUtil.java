@@ -293,6 +293,16 @@ public class UpdateDataUtil {
 		Pattern p = Pattern.compile(regEx);
 		Matcher m =null;
 		int weatherNum=0;
+		String exerciseIndex=null;
+		String washIndex=null;
+		String dressingIndex=null;
+		if(pm2_5_array[index]<=100){
+			exerciseIndex="适宜";
+		}else if(pm2_5_array[index]<=200){
+			exerciseIndex="不太适宜";
+		}else{
+			exerciseIndex="不适宜";
+		}
 		if(flag_internet){//具体运行时此处为flag_internet
 			if(jo_weather.getString("msg").equals("success")){//判断状态码是否正常（正常则为有数据，否则无数据），同时判断所需数据是否为空
 //				获取当前城市的实时天气情况
@@ -303,41 +313,70 @@ public class UpdateDataUtil {
 							.getJSONObject(0).getString("weather");
 					if (weathercase.matches(".*雨")) {
 						weatherNum = 0;
+						exerciseIndex="不适宜";
+						washIndex="不适宜";
 					} else if (weathercase.matches(".*雪")) {
 						weatherNum = 1;
+						exerciseIndex="不适宜";
+						washIndex="不适宜";
 					} else if (weathercase.matches(".*云")) {
 						weatherNum = 2;
+						washIndex="适宜";
 					} else if (weathercase.matches("晴")) {
 						weatherNum = 3;
+						washIndex="适宜";
 					} else if (weathercase.matches("阴")) {
 						weatherNum = 4;
-					} else if (weathercase.matches("霾")) {
+						washIndex="不太适宜";
+					} else if(weathercase.matches("雾")){
 						weatherNum = 5;
-					} else if (weathercase.matches("浮尘")){
+						washIndex="不太适宜";
+					}else if (weathercase.matches("霾")) {
 						weatherNum = 6;
+						exerciseIndex="不适宜";
+						washIndex="不适宜";
+					} else if (weathercase.matches("浮尘")){
+						weatherNum = 7;
+						exerciseIndex="不适宜";
+						washIndex="不适宜";
 					} else{
 						weatherNum = -1;
 					}
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("temperature"));
-					temperature_array[index] = Integer.parseInt(m
-							.replaceAll("").trim());
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("humidity"));
-					humidity_array[index] = Integer.parseInt(m.replaceAll("")
-							.trim());
-					m = p.matcher(jo_weather.getJSONArray("result")
-							.getJSONObject(0).getString("wind"));
-					wind_array[index] = Integer.parseInt(m.replaceAll("")
-							.trim());
 				} catch (Exception e) {
 					// TODO 自动生成的 catch 块
 					weather_array[index] = "数据获取失败！";
 					weatherNum = -1;
-					temperature_array[index] = -1;
-					humidity_array[index] = -1;
-					wind_array[index] = -1;
 					e.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("temperature"));
+					temperature_array[index] = Integer.parseInt(m
+							.replaceAll("").trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					temperature_array[index] = -1;
+					e1.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("humidity"));
+					humidity_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					humidity_array[index] = -1;
+					e1.printStackTrace();
+				}
+				try {
+					m = p.matcher(jo_weather.getJSONArray("result")
+							.getJSONObject(0).getString("wind"));
+					wind_array[index] = Integer.parseInt(m.replaceAll("")
+							.trim());
+				} catch (NumberFormatException e1) {
+					// TODO 自动生成的 catch 块
+					wind_array[index] = -1;
+					e1.printStackTrace();
 				}
 				// 获取当前城市一小时候的天气预测值
 				try {
@@ -349,19 +388,29 @@ public class UpdateDataUtil {
 					preWeather_array[index] = "数据获取失败！";
 					e.printStackTrace();
 				}
+				if (jo_weather.getJSONArray("result").getJSONObject(0)
+						.getString("dressingIndex")!=null&&!jo_weather.getJSONArray("result").getJSONObject(0)
+								.getString("dressingIndex").isEmpty()) {
+					dressingIndex=jo_weather.getJSONArray("result").getJSONObject(0)
+							.getString("dressingIndex");
+				}else{
+					if(temperature_array[index]<=5){
+						dressingIndex="羽绒服类";
+					}else if(temperature_array[index]<=15){
+						dressingIndex="毛衣类";
+					}else if(temperature_array[index]<=25){
+						dressingIndex="单衣长袖类";
+					}else{
+						dressingIndex="短袖类";
+					}
+				}
 				suggest_array[index] = "着装建议："
-						+ jo_weather.getJSONArray("result").getJSONObject(0)
-								.getString("dressingIndex")
-						+ "\n运动建议："
-						+ jo_weather.getJSONArray("result").getJSONObject(0)
-								.getString("exerciseIndex")
-						+ "\n洗刷建议："
-						+ jo_weather.getJSONArray("result").getJSONObject(0)
-								.getString("washIndex");
+						+ dressingIndex + "\n运动建议："
+						+ exerciseIndex + "\n洗刷建议：" + washIndex;
 			}else{
 				weather_array[index]="未查询到数据！";
 				preWeather_array[index]="未查询到数据！";
-				suggest_array[index]="有待数据分析";
+				suggest_array[index]="数据缺失！";
 				weatherNum=-1;
 				temperature_array[index] = -1;
 				humidity_array[index] = -1;
@@ -405,6 +454,8 @@ public class UpdateDataUtil {
 			throw e;
 		}
     	if (flag_success) {
+    		city_list.clear();
+    		belongcity_list.clear();
 			jo_cityList = DataRequest.getJo_cityList();
 			if (jo_cityList.getString("msg").equals("success")) {
 				ja = jo_cityList.getJSONArray("result");

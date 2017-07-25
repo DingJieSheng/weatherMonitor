@@ -35,8 +35,26 @@ public class ScheduleTask {
 				}
 			}
 		};
+		
+		Runnable ml_Runnable = new Runnable() {
+
+			@Override
+			public void run() {
+				// TODO 自动生成的方法存根
+				try {
+					myFrame.exportData();
+					myFrame.machineLearning();
+				} catch (Exception e) {
+					// TODO 自动生成的 catch 块
+					e.printStackTrace();
+				}
+			}
+		};
+		
 		ScheduledExecutorService update_Service=Executors.newSingleThreadScheduledExecutor();
-		update_Service.scheduleAtFixedRate(up_Runnable, 0, 30, TimeUnit.MINUTES);//设定的时间间隔为3岁0分钟
+		update_Service.scheduleAtFixedRate(up_Runnable, 0, 20, TimeUnit.MINUTES);//设定的更新数据时间间隔为30分钟
+		update_Service.scheduleAtFixedRate(ml_Runnable, 0, 1, TimeUnit.DAYS);//设定的学习时间间隔为1天
+		
 	}
 
 }
